@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fidellabs.app/schemas/lesson.schema.json",
+  "title": "Fidel Labs Lesson",
+  "type": "object",
+  "required": ["id", "title", "unit", "order", "type", "teaches", "exercises", "passingScore", "xpReward"],
+  "properties": {
+    "id": { "type": "string" },
+    "title": { "type": "string" },
+    "unit": { "type": "string" },
+    "order": { "type": "integer", "minimum": 1 },
+    "type": {
+      "type": "string",
+      "enum": ["intro", "fidel", "review", "word"]
+    },
+    "description": { "type": "string" },
+    "teaches": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string", "enum": ["fidel", "word", "phrase"] },
+          "fidel": { "type": "string" },
+          "romanization": { "type": "string" },
+          "family": { "type": "string" },
+          "vowelOrder": { "type": "integer", "minimum": 1 },
+          "audio": { "type": "string" },
+          "amharic": { "type": "string" },
+          "meaning": { "type": "string" },
+          "components": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "exercises": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "type"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["choose_fidel_from_sound", "choose_sound_from_fidel", "match_pairs", "build_word"]
+          },
+          "prompt": { "type": "object" },
+          "answer": {},
+          "choices": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "pairs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["left", "right", "tracksItemId"],
+              "properties": {
+                "left": { "type": "string" },
+                "right": { "type": "string" },
+                "tracksItemId": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "tracksItemId": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "passingScore": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "xpReward": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "additionalProperties": false
+}
+

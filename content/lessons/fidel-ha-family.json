@@ -1,0 +1,131 @@
+{
+  "id": "fidel-ha-family",
+  "title": "The ሀ Family",
+  "unit": "fidel-foundations",
+  "order": 2,
+  "type": "fidel",
+  "description": "Learn the seven beginner forms in the ሀ family.",
+  "teaches": [
+    {
+      "id": "fidel-ha-1",
+      "type": "fidel",
+      "fidel": "ሀ",
+      "romanization": "ha",
+      "family": "ha",
+      "vowelOrder": 1,
+      "audio": "assets/audio/fidel/ha-1.mp3"
+    },
+    {
+      "id": "fidel-ha-2",
+      "type": "fidel",
+      "fidel": "ሁ",
+      "romanization": "hu",
+      "family": "ha",
+      "vowelOrder": 2,
+      "audio": "assets/audio/fidel/ha-2.mp3"
+    },
+    {
+      "id": "fidel-ha-3",
+      "type": "fidel",
+      "fidel": "ሂ",
+      "romanization": "hi",
+      "family": "ha",
+      "vowelOrder": 3,
+      "audio": "assets/audio/fidel/ha-3.mp3"
+    },
+    {
+      "id": "fidel-ha-4",
+      "type": "fidel",
+      "fidel": "ሃ",
+      "romanization": "ha",
+      "family": "ha",
+      "vowelOrder": 4,
+      "audio": "assets/audio/fidel/ha-4.mp3"
+    },
+    {
+      "id": "fidel-ha-5",
+      "type": "fidel",
+      "fidel": "ሄ",
+      "romanization": "he",
+      "family": "ha",
+      "vowelOrder": 5,
+      "audio": "assets/audio/fidel/ha-5.mp3"
+    },
+    {
+      "id": "fidel-ha-6",
+      "type": "fidel",
+      "fidel": "ህ",
+      "romanization": "h",
+      "family": "ha",
+      "vowelOrder": 6,
+      "audio": "assets/audio/fidel/ha-6.mp3"
+    },
+    {
+      "id": "fidel-ha-7",
+      "type": "fidel",
+      "fidel": "ሆ",
+      "romanization": "ho",
+      "family": "ha",
+      "vowelOrder": 7,
+      "audio": "assets/audio/fidel/ha-7.mp3"
+    }
+  ],
+  "exercises": [
+    {
+      "id": "ex-ha-choose-fidel-1",
+      "type": "choose_fidel_from_sound",
+      "prompt": {
+        "audio": "assets/audio/fidel/ha-1.mp3",
+        "romanization": "ha"
+      },
+      "answer": "ሀ",
+      "choices": ["ሀ", "ሁ", "ሂ", "ሆ"],
+      "tracksItemId": "fidel-ha-1"
+    },
+    {
+      "id": "ex-ha-choose-sound-1",
+      "type": "choose_sound_from_fidel",
+      "prompt": {
+        "fidel": "ሁ"
+      },
+      "answer": "hu",
+      "choices": ["ha", "hu", "hi", "ho"],
+      "tracksItemId": "fidel-ha-2"
+    },
+    {
+      "id": "ex-ha-match-1",
+      "type": "match_pairs",
+      "pairs": [
+        {
+          "left": "ሀ",
+          "right": "ha",
+          "tracksItemId": "fidel-ha-1"
+        },
+        {
+          "left": "ሁ",
+          "right": "hu",
+          "tracksItemId": "fidel-ha-2"
+        },
+        {
+          "left": "ሂ",
+          "right": "hi",
+          "tracksItemId": "fidel-ha-3"
+        }
+      ]
+    },
+    {
+      "id": "ex-ha-choose-fidel-2",
+      "type": "choose_fidel_from_sound",
+      "prompt": {
+        "audio": "assets/audio/fidel/ha-7.mp3",
+        "romanization": "ho"
+      },
+      "answer": "ሆ",
+      "choices": ["ሄ", "ህ", "ሆ", "ሃ"],
+      "tracksItemId": "fidel-ha-7"
+    }
+  ],
+  "passingScore": 0.8,
+  "xpReward": 10
+}
+
