@@ -5,70 +5,199 @@ import {
   Check,
   Flame,
   GraduationCap,
+  Library,
   Lock,
   RotateCcw,
   Sparkles,
+  Target,
   Volume2,
-  X,
 } from "lucide-react";
-import haLesson from "../content/lessons/fidel-ha-family.json";
 
-type Exercise = (typeof haLesson.exercises)[number];
 type AnswerState = "idle" | "correct" | "wrong";
+type LessonState = "done" | "active" | "available" | "locked";
+type Exercise = {
+  id: string;
+  promptType: "sound-to-fidel" | "fidel-to-sound";
+  prompt: string;
+  answer: string;
+  choices: string[];
+  tracks: string;
+};
+type Lesson = {
+  id: string;
+  title: string;
+  shortTitle: string;
+  state: LessonState;
+  glyph: string;
+  description: string;
+  items: { id: string; fidel: string; sound: string; note: string }[];
+};
 
-const lessons = [
-  { title: "Welcome", state: "done", glyph: "ፊ" },
-  { title: "ሀ Family", state: "active", glyph: "ሀ" },
-  { title: "ለ Family", state: "locked", glyph: "ለ" },
-  { title: "መ Family", state: "locked", glyph: "መ" },
-  { title: "First Words", state: "locked", glyph: "ሰ" },
+const lessons: Lesson[] = [
+  {
+    id: "ha",
+    title: "The ሀ Family",
+    shortTitle: "ሀ Family",
+    state: "active",
+    glyph: "ሀ",
+    description: "Start with the seven beginner forms in the ሀ family.",
+    items: [
+      { id: "ha-1", fidel: "ሀ", sound: "ha", note: "first order" },
+      { id: "ha-2", fidel: "ሁ", sound: "hu", note: "second order" },
+      { id: "ha-3", fidel: "ሂ", sound: "hi", note: "third order" },
+      { id: "ha-4", fidel: "ሃ", sound: "ha", note: "fourth order" },
+      { id: "ha-5", fidel: "ሄ", sound: "he", note: "fifth order" },
+      { id: "ha-6", fidel: "ህ", sound: "h", note: "sixth order" },
+      { id: "ha-7", fidel: "ሆ", sound: "ho", note: "seventh order" },
+    ],
+  },
+  {
+    id: "le",
+    title: "The ለ Family",
+    shortTitle: "ለ Family",
+    state: "available",
+    glyph: "ለ",
+    description: "Learn the L-family and compare its rhythm to ሀ.",
+    items: [
+      { id: "le-1", fidel: "ለ", sound: "le", note: "base shape" },
+      { id: "le-2", fidel: "ሉ", sound: "lu", note: "rounded vowel" },
+      { id: "le-3", fidel: "ሊ", sound: "li", note: "high vowel" },
+      { id: "le-4", fidel: "ላ", sound: "la", note: "open vowel" },
+      { id: "le-5", fidel: "ሌ", sound: "le", note: "long e" },
+      { id: "le-6", fidel: "ል", sound: "l", note: "closed form" },
+      { id: "le-7", fidel: "ሎ", sound: "lo", note: "round ending" },
+    ],
+  },
+  {
+    id: "me",
+    title: "The መ Family",
+    shortTitle: "መ Family",
+    state: "locked",
+    glyph: "መ",
+    description: "Add the M-family after the first two sets are familiar.",
+    items: [
+      { id: "me-1", fidel: "መ", sound: "me", note: "base shape" },
+      { id: "me-2", fidel: "ሙ", sound: "mu", note: "rounded vowel" },
+      { id: "me-3", fidel: "ሚ", sound: "mi", note: "high vowel" },
+      { id: "me-4", fidel: "ማ", sound: "ma", note: "open vowel" },
+      { id: "me-5", fidel: "ሜ", sound: "me", note: "long e" },
+      { id: "me-6", fidel: "ም", sound: "m", note: "closed form" },
+      { id: "me-7", fidel: "ሞ", sound: "mo", note: "round ending" },
+    ],
+  },
+  {
+    id: "se",
+    title: "The ሰ Family",
+    shortTitle: "ሰ Family",
+    state: "locked",
+    glyph: "ሰ",
+    description: "A high-utility family for first words like ሰላም.",
+    items: [
+      { id: "se-1", fidel: "ሰ", sound: "se", note: "base shape" },
+      { id: "se-2", fidel: "ሱ", sound: "su", note: "rounded vowel" },
+      { id: "se-3", fidel: "ሲ", sound: "si", note: "high vowel" },
+      { id: "se-4", fidel: "ሳ", sound: "sa", note: "open vowel" },
+      { id: "se-5", fidel: "ሴ", sound: "se", note: "long e" },
+      { id: "se-6", fidel: "ስ", sound: "s", note: "closed form" },
+      { id: "se-7", fidel: "ሶ", sound: "so", note: "round ending" },
+    ],
+  },
 ];
 
-const reviewItems = [
-  { glyph: "ሃ", sound: "ha", note: "looks close to ሀ" },
-  { glyph: "ህ", sound: "h", note: "sixth order" },
-  { glyph: "ሆ", sound: "ho", note: "round ending" },
+const words = [
+  { amharic: "ሰላም", romanization: "selam", meaning: "hello / peace", status: "preview" },
+  { amharic: "ማር", romanization: "mar", meaning: "honey", status: "locked" },
+  { amharic: "ልብ", romanization: "lib", meaning: "heart", status: "locked" },
 ];
 
-function getPrompt(exercise: Exercise) {
-  if (exercise.type === "choose_sound_from_fidel") return exercise.prompt?.fidel ?? "ሀ";
-  if (exercise.type === "choose_fidel_from_sound") return exercise.prompt?.romanization ?? "ha";
-  return "ሀ";
-}
+function makeExercises(lesson: Lesson): Exercise[] {
+  const symbols = lesson.items.map((item) => item.fidel);
+  const sounds = lesson.items.map((item) => item.sound);
+  const first = lesson.items[0];
+  const second = lesson.items[1];
+  const third = lesson.items[2];
+  const last = lesson.items[6];
 
-function getPromptLabel(exercise: Exercise) {
-  return exercise.type === "choose_sound_from_fidel" ? "Choose the sound" : "Choose the fidel";
-}
-
-function isCorrect(exercise: Exercise, choice: string) {
-  return String(exercise.answer) === choice;
+  return [
+    {
+      id: `${lesson.id}-sound-1`,
+      promptType: "sound-to-fidel",
+      prompt: first.sound,
+      answer: first.fidel,
+      choices: symbols.slice(0, 4),
+      tracks: first.id,
+    },
+    {
+      id: `${lesson.id}-fidel-2`,
+      promptType: "fidel-to-sound",
+      prompt: second.fidel,
+      answer: second.sound,
+      choices: [...new Set([first.sound, second.sound, third.sound, last.sound])],
+      tracks: second.id,
+    },
+    {
+      id: `${lesson.id}-sound-last`,
+      promptType: "sound-to-fidel",
+      prompt: last.sound,
+      answer: last.fidel,
+      choices: [lesson.items[3].fidel, lesson.items[4].fidel, lesson.items[5].fidel, last.fidel],
+      tracks: last.id,
+    },
+    {
+      id: `${lesson.id}-fidel-3`,
+      promptType: "fidel-to-sound",
+      prompt: third.fidel,
+      answer: third.sound,
+      choices: sounds.slice(0, 4),
+      tracks: third.id,
+    },
+  ];
 }
 
 export function App() {
-  const exercises = useMemo(
-    () => haLesson.exercises.filter((exercise) => exercise.type !== "match_pairs"),
-    [],
-  );
+  const [activeLessonId, setActiveLessonId] = useState("ha");
   const [exerciseIndex, setExerciseIndex] = useState(0);
   const [answerState, setAnswerState] = useState<AnswerState>("idle");
   const [selected, setSelected] = useState<string | null>(null);
-  const [xp, setXp] = useState(120);
-  const [streak, setStreak] = useState(3);
+  const [xp, setXp] = useState(180);
+  const [streak, setStreak] = useState(4);
+  const [completedLessons, setCompletedLessons] = useState<string[]>([]);
+  const [reviewQueue, setReviewQueue] = useState(["ha-4", "ha-6", "ha-7"]);
+
+  const activeLesson = lessons.find((lesson) => lesson.id === activeLessonId) ?? lessons[0];
+  const exercises = useMemo(() => makeExercises(activeLesson), [activeLesson]);
   const activeExercise = exercises[exerciseIndex] ?? exercises[0];
+  const activeItem = activeLesson.items.find((item) => item.id === activeExercise.tracks);
   const progress = ((exerciseIndex + (answerState === "correct" ? 1 : 0)) / exercises.length) * 100;
+  const allItems = lessons.flatMap((lesson) => lesson.items.map((item) => ({ ...item, family: lesson.shortTitle })));
+  const masteredCount = allItems.filter((item) => completedLessons.includes(item.id.split("-")[0]) || item.id.startsWith("ha")).length;
+
+  function chooseLesson(lesson: Lesson) {
+    if (lesson.state === "locked") return;
+    setActiveLessonId(lesson.id);
+    setExerciseIndex(0);
+    setSelected(null);
+    setAnswerState("idle");
+  }
 
   function choose(choice: string) {
     if (answerState !== "idle") return;
-    const correct = isCorrect(activeExercise, choice);
+    const correct = activeExercise.answer === choice;
     setSelected(choice);
     setAnswerState(correct ? "correct" : "wrong");
-    if (correct) setXp((value) => value + 5);
+    if (correct) {
+      setXp((value) => value + 5);
+      setReviewQueue((items) => items.filter((id) => id !== activeExercise.tracks));
+    } else {
+      setReviewQueue((items) => [activeExercise.tracks, ...items.filter((id) => id !== activeExercise.tracks)].slice(0, 8));
+    }
   }
 
   function next() {
     if (exerciseIndex === exercises.length - 1) {
       setExerciseIndex(0);
       setStreak((value) => value + 1);
+      setCompletedLessons((ids) => [...new Set([...ids, activeLesson.id])]);
     } else {
       setExerciseIndex((value) => value + 1);
     }
@@ -87,7 +216,7 @@ export function App() {
             <span>
               <strong className="block text-xl font-black tracking-tight">Fidel Labs</strong>
               <small className="block text-xs font-bold uppercase tracking-[0.22em] text-black/45">
-                Amharic demo
+                Amharic fidel demo
               </small>
             </span>
           </a>
@@ -96,24 +225,30 @@ export function App() {
             <a className="rounded-full border border-black/10 px-4 py-2 text-sm font-bold" href="#lesson">
               Lesson
             </a>
-            <a className="rounded-full border border-black/10 px-4 py-2 text-sm font-bold" href="#system">
-              System
+            <a className="rounded-full border border-black/10 px-4 py-2 text-sm font-bold" href="#library">
+              Library
+            </a>
+            <a className="rounded-full border border-black/10 px-4 py-2 text-sm font-bold" href="#roadmap">
+              Roadmap
             </a>
           </nav>
         </div>
       </header>
 
-      <section id="top" className="mx-auto grid min-h-[calc(100vh-78px)] max-w-7xl items-center gap-8 px-5 py-12 md:grid-cols-[0.9fr_1.1fr] md:px-8">
+      <section
+        id="top"
+        className="mx-auto grid min-h-[calc(100vh-78px)] max-w-7xl items-center gap-8 px-5 py-12 md:grid-cols-[0.82fr_1.18fr] md:px-8"
+      >
         <div>
           <p className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-black/55">
             <Sparkles size={14} />
-            Vercel preview demo
+            Expanded v1 demo
           </p>
           <h1 className="mt-6 max-w-3xl text-5xl font-black leading-[0.92] tracking-tight md:text-7xl">
             Learn Amharic fidel one tap at a time.
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-8 text-black/62">
-            A Duolingo-style prototype for recognizing fidel, matching sounds, building mastery, and reviewing weak characters.
+            A fuller product demo with lesson selection, mastery feedback, review queue, first words, and a browseable fidel library.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <a
@@ -123,134 +258,272 @@ export function App() {
               Try lesson <ArrowRight size={17} />
             </a>
             <a
-              href="#system"
+              href="#library"
               className="inline-flex items-center gap-2 rounded-full border border-black/12 bg-white px-6 py-4 text-sm font-black"
             >
-              View v1 system
+              Browse fidel
             </a>
+          </div>
+
+          <div className="mt-10 grid max-w-xl grid-cols-3 gap-3">
+            <Metric icon={<Flame size={19} />} label="day streak" value={streak} dark />
+            <Metric icon={<GraduationCap size={19} />} label="XP earned" value={xp} />
+            <Metric icon={<Target size={19} />} label="mastered" value={`${masteredCount}/${allItems.length}`} />
           </div>
         </div>
 
-        <section id="lesson" className="rounded-[2rem] border border-black/10 bg-white p-4 shadow-2xl shadow-black/10 md:p-6">
-          <div className="mb-5 grid grid-cols-3 gap-3">
-            <div className="rounded-2xl bg-black p-4 text-white">
-              <Flame size={20} />
-              <strong className="mt-4 block text-2xl">{streak}</strong>
-              <span className="text-xs text-white/55">day streak</span>
-            </div>
-            <div className="rounded-2xl border border-black/10 p-4">
-              <GraduationCap size={20} />
-              <strong className="mt-4 block text-2xl">{xp}</strong>
-              <span className="text-xs text-black/55">XP earned</span>
-            </div>
-            <div className="rounded-2xl border border-black/10 p-4">
-              <BookOpen size={20} />
-              <strong className="mt-4 block text-2xl">7</strong>
-              <span className="text-xs text-black/55">fidel set</span>
-            </div>
+        <section id="lesson" className="grid gap-4">
+          <div className="grid gap-3 sm:grid-cols-5">
+            {lessons.map((lesson) => {
+              const locked = lesson.state === "locked";
+              const active = activeLesson.id === lesson.id;
+              return (
+                <button
+                  key={lesson.id}
+                  onClick={() => chooseLesson(lesson)}
+                  className={[
+                    "rounded-2xl border p-4 text-left transition",
+                    active ? "border-black bg-black text-white" : "border-black/10 bg-white hover:-translate-y-0.5",
+                    locked ? "cursor-not-allowed opacity-45 hover:translate-y-0" : "",
+                  ].join(" ")}
+                >
+                  <span className="font-[var(--ethiopic)] text-4xl font-black">{lesson.glyph}</span>
+                  <strong className="mt-4 block text-sm">{lesson.shortTitle}</strong>
+                  <span className="mt-2 inline-flex items-center gap-1 text-xs opacity-55">
+                    {locked && <Lock size={12} />}
+                    {completedLessons.includes(lesson.id) ? "done" : lesson.state}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
-          <article className="rounded-[1.5rem] border border-black/10 p-5">
-            <div className="flex items-center gap-3">
-              <button className="grid size-10 place-items-center rounded-full border border-black/10" aria-label="Close lesson">
-                <X size={18} />
-              </button>
-              <div className="h-3 flex-1 overflow-hidden rounded-full bg-black/8">
-                <span className="block h-full rounded-full bg-black transition-all" style={{ width: `${Math.max(18, progress)}%` }} />
-              </div>
-              <span className="text-sm font-bold text-black/55">
-                {exerciseIndex + 1}/{exercises.length}
-              </span>
-            </div>
+          <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+            <LessonRunner
+              activeExercise={activeExercise}
+              activeItem={activeItem}
+              answerState={answerState}
+              exerciseIndex={exerciseIndex}
+              exercisesLength={exercises.length}
+              lesson={activeLesson}
+              onChoose={choose}
+              onNext={next}
+              progress={progress}
+              selected={selected}
+            />
 
-            <div className="py-10 text-center">
-              <p className="font-[var(--ethiopic)] text-lg font-black">{haLesson.title}</p>
-              <h2 className="mt-5 text-2xl font-black">{getPromptLabel(activeExercise)}</h2>
-              <div className="mt-6 grid min-h-32 place-items-center font-[var(--ethiopic)] text-8xl font-black">
-                {getPrompt(activeExercise)}
-              </div>
-              <button className="mx-auto mt-4 grid size-14 place-items-center rounded-full bg-black text-white" aria-label="Play sound">
-                <Volume2 size={26} />
-              </button>
-            </div>
+            <aside className="grid gap-4">
+              <Panel title="Review queue" eyebrow={`${reviewQueue.length} weak items`}>
+                <div className="grid gap-2">
+                  {reviewQueue.slice(0, 4).map((id) => {
+                    const item = allItems.find((entry) => entry.id === id);
+                    if (!item) return null;
+                    return (
+                      <div key={id} className="rounded-2xl border border-black/10 bg-[#fafafa] p-3">
+                        <span className="font-[var(--ethiopic)] text-3xl font-black">{item.fidel}</span>
+                        <strong className="ml-3">{item.sound}</strong>
+                        <p className="mt-1 text-xs text-black/50">{item.note}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Panel>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              {activeExercise.choices?.map((choice) => {
-                const correct = answerState !== "idle" && isCorrect(activeExercise, choice);
-                const wrong = selected === choice && answerState === "wrong";
-                return (
-                  <button
-                    key={choice}
-                    onClick={() => choose(choice)}
-                    className={[
-                      "min-h-24 rounded-2xl border p-4 text-center transition hover:-translate-y-0.5",
-                      correct ? "border-black bg-black text-white" : "",
-                      wrong ? "border-red-500 bg-red-50 text-red-700" : "",
-                      !correct && !wrong ? "border-black/10 bg-[#fafafa]" : "",
-                    ].join(" ")}
-                  >
-                    <strong className="block font-[var(--ethiopic)] text-3xl">{choice}</strong>
-                    <span className="mt-1 block text-sm font-bold opacity-60">
-                      {choice.length === 1
-                        ? haLesson.teaches.find((item) => item.fidel === choice)?.romanization
-                        : choice}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm font-bold text-black/55">
-                {answerState === "idle" && "Choose an answer to continue."}
-                {answerState === "correct" && "Correct. Mastery went up."}
-                {answerState === "wrong" && "Almost. Added to review."}
-              </p>
-              <button
-                onClick={answerState === "idle" ? undefined : next}
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-black px-6 text-sm font-black text-white disabled:opacity-35"
-                disabled={answerState === "idle"}
-              >
-                {exerciseIndex === exercises.length - 1 ? <RotateCcw size={17} /> : <Check size={17} />}
-                {exerciseIndex === exercises.length - 1 ? "Restart" : "Continue"}
-              </button>
-            </div>
-          </article>
+              <Panel title="First words" eyebrow="preview">
+                <div className="grid gap-2">
+                  {words.map((word) => (
+                    <div key={word.amharic} className="rounded-2xl border border-black/10 p-3">
+                      <span className="font-[var(--ethiopic)] text-2xl font-black">{word.amharic}</span>
+                      <strong className="ml-3 text-sm">{word.romanization}</strong>
+                      <p className="mt-1 text-xs text-black/50">{word.meaning}</p>
+                    </div>
+                  ))}
+                </div>
+              </Panel>
+            </aside>
+          </div>
         </section>
       </section>
 
-      <section id="system" className="border-t border-black/10 bg-black px-5 py-20 text-white md:px-8">
+      <section id="library" className="border-t border-black/10 bg-white px-5 py-20 md:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.3em] text-black/38">
+                <Library size={15} />
+                Character library
+              </p>
+              <h2 className="mt-4 text-4xl font-black tracking-tight md:text-6xl">Fidel grid by family.</h2>
+            </div>
+            <p className="max-w-md text-sm leading-6 text-black/55">
+              The production version can use this as a searchable reference with audio, examples, and handwriting practice.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-4 md:grid-cols-2">
+            {lessons.map((lesson) => (
+              <article key={lesson.id} className="rounded-[1.5rem] border border-black/10 bg-[#f7f7f4] p-5">
+                <div className="mb-5 flex items-center justify-between">
+                  <div>
+                    <h3 className="font-[var(--ethiopic)] text-3xl font-black">{lesson.title}</h3>
+                    <p className="mt-1 text-sm text-black/55">{lesson.description}</p>
+                  </div>
+                  {lesson.state === "locked" && <Lock className="text-black/30" size={20} />}
+                </div>
+                <div className="grid grid-cols-7 gap-2">
+                  {lesson.items.map((item) => (
+                    <button key={item.id} className="rounded-2xl border border-black/10 bg-white p-3 text-center transition hover:border-black">
+                      <span className="block font-[var(--ethiopic)] text-3xl font-black">{item.fidel}</span>
+                      <span className="mt-1 block text-xs font-bold text-black/45">{item.sound}</span>
+                    </button>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="roadmap" className="bg-black px-5 py-20 text-white md:px-8">
         <div className="mx-auto grid max-w-7xl gap-8 md:grid-cols-[0.8fr_1.2fr]">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.3em] text-white/38">v1 demo system</p>
-            <h2 className="mt-4 text-4xl font-black tracking-tight md:text-6xl">Small loop, real learning spine.</h2>
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-white/38">what comes next</p>
+            <h2 className="mt-4 text-4xl font-black tracking-tight md:text-6xl">Enough shape to build from.</h2>
           </div>
-          <div className="grid gap-4">
-            <div className="grid gap-3 sm:grid-cols-5">
-              {lessons.map((lesson) => (
-                <div key={lesson.title} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <span className="font-[var(--ethiopic)] text-4xl font-black">{lesson.glyph}</span>
-                  <strong className="mt-5 block text-sm">{lesson.title}</strong>
-                  <span className="mt-2 inline-flex items-center gap-1 text-xs text-white/45">
-                    {lesson.state === "locked" && <Lock size={12} />}
-                    {lesson.state}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <div className="grid gap-4 md:grid-cols-3">
-              {reviewItems.map((item) => (
-                <div key={item.glyph} className="rounded-2xl border border-white/10 bg-white p-5 text-black">
-                  <span className="font-[var(--ethiopic)] text-5xl font-black">{item.glyph}</span>
-                  <strong className="mt-4 block">{item.sound}</strong>
-                  <p className="mt-2 text-sm text-black/55">{item.note}</p>
-                </div>
-              ))}
-            </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {[
+              ["Audio pass", "Record native speaker clips for every fidel and first word."],
+              ["Progress storage", "Save XP, streak, mastery, and review timing locally first."],
+              ["More exercises", "Add match pairs, build word, and handwriting practice."],
+              ["Auth later", "Sync progress with Supabase after the local loop feels strong."],
+            ].map(([title, copy]) => (
+              <div key={title} className="rounded-3xl border border-white/10 bg-white/5 p-6">
+                <strong className="text-xl">{title}</strong>
+                <p className="mt-3 text-sm leading-6 text-white/55">{copy}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
     </main>
+  );
+}
+
+function Metric({
+  dark,
+  icon,
+  label,
+  value,
+}: {
+  dark?: boolean;
+  icon: React.ReactNode;
+  label: string;
+  value: number | string;
+}) {
+  return (
+    <div className={["rounded-2xl p-4", dark ? "bg-black text-white" : "border border-black/10 bg-white"].join(" ")}>
+      {icon}
+      <strong className="mt-4 block text-2xl">{value}</strong>
+      <span className={["text-xs", dark ? "text-white/55" : "text-black/55"].join(" ")}>{label}</span>
+    </div>
+  );
+}
+
+function Panel({ children, eyebrow, title }: { children: React.ReactNode; eyebrow: string; title: string }) {
+  return (
+    <article className="rounded-[1.5rem] border border-black/10 bg-white p-5">
+      <p className="text-xs font-black uppercase tracking-[0.22em] text-black/35">{eyebrow}</p>
+      <h3 className="mt-2 text-xl font-black">{title}</h3>
+      <div className="mt-4">{children}</div>
+    </article>
+  );
+}
+
+function LessonRunner({
+  activeExercise,
+  activeItem,
+  answerState,
+  exerciseIndex,
+  exercisesLength,
+  lesson,
+  onChoose,
+  onNext,
+  progress,
+  selected,
+}: {
+  activeExercise: Exercise;
+  activeItem?: Lesson["items"][number];
+  answerState: AnswerState;
+  exerciseIndex: number;
+  exercisesLength: number;
+  lesson: Lesson;
+  onChoose: (choice: string) => void;
+  onNext: () => void;
+  progress: number;
+  selected: string | null;
+}) {
+  return (
+    <article className="rounded-[2rem] border border-black/10 bg-white p-4 shadow-2xl shadow-black/10 md:p-6">
+      <div className="flex items-center gap-3">
+        <div className="h-3 flex-1 overflow-hidden rounded-full bg-black/8">
+          <span className="block h-full rounded-full bg-black transition-all" style={{ width: `${Math.max(18, progress)}%` }} />
+        </div>
+        <span className="text-sm font-bold text-black/55">
+          {exerciseIndex + 1}/{exercisesLength}
+        </span>
+      </div>
+
+      <div className="py-10 text-center">
+        <p className="font-[var(--ethiopic)] text-lg font-black">{lesson.title}</p>
+        <h2 className="mt-5 text-2xl font-black">
+          {activeExercise.promptType === "fidel-to-sound" ? "Choose the sound" : "Choose the fidel"}
+        </h2>
+        <div className="mt-6 grid min-h-32 place-items-center font-[var(--ethiopic)] text-8xl font-black">
+          {activeExercise.prompt}
+        </div>
+        <button className="mx-auto mt-4 grid size-14 place-items-center rounded-full bg-black text-white" aria-label="Play sound">
+          <Volume2 size={26} />
+        </button>
+        {activeItem && <p className="mt-4 text-sm font-bold text-black/45">{activeItem.note}</p>}
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        {activeExercise.choices.map((choice) => {
+          const correct = answerState !== "idle" && activeExercise.answer === choice;
+          const wrong = selected === choice && answerState === "wrong";
+          return (
+            <button
+              key={choice}
+              onClick={() => onChoose(choice)}
+              className={[
+                "min-h-24 rounded-2xl border p-4 text-center transition hover:-translate-y-0.5",
+                correct ? "border-black bg-black text-white" : "",
+                wrong ? "border-red-500 bg-red-50 text-red-700" : "",
+                !correct && !wrong ? "border-black/10 bg-[#fafafa]" : "",
+              ].join(" ")}
+            >
+              <strong className="block font-[var(--ethiopic)] text-3xl">{choice}</strong>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm font-bold text-black/55">
+          {answerState === "idle" && "Choose an answer to continue."}
+          {answerState === "correct" && "Correct. Mastery went up."}
+          {answerState === "wrong" && "Almost. Added to review."}
+        </p>
+        <button
+          onClick={answerState === "idle" ? undefined : onNext}
+          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-black px-6 text-sm font-black text-white disabled:opacity-35"
+          disabled={answerState === "idle"}
+        >
+          {exerciseIndex === exercisesLength - 1 ? <RotateCcw size={17} /> : <Check size={17} />}
+          {exerciseIndex === exercisesLength - 1 ? "Finish" : "Continue"}
+        </button>
+      </div>
+    </article>
   );
 }
 
