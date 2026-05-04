@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ArrowRight,
   BookOpen,
   Check,
   Flame,
@@ -9,7 +8,6 @@ import {
   Lock,
   Map,
   RotateCcw,
-  Sparkles,
   Target,
   Volume2,
 } from "lucide-react";
@@ -230,8 +228,8 @@ export function App() {
 
   return (
     <main className="min-h-screen bg-[#f7f7f4] text-black">
-      <div className="mx-auto grid min-h-screen max-w-7xl gap-5 px-4 py-4 md:grid-cols-[92px_1fr] md:px-6">
-        <nav className="fixed bottom-4 left-4 right-4 z-40 grid grid-cols-3 gap-2 rounded-[1.5rem] border border-black/10 bg-white/90 p-2 shadow-2xl shadow-black/10 backdrop-blur md:sticky md:left-auto md:right-auto md:top-4 md:bottom-auto md:h-[calc(100vh-2rem)] md:grid-cols-1 md:content-start">
+      <div className="mx-auto grid min-h-screen w-full max-w-[1500px] gap-5 px-4 py-4 md:grid-cols-[108px_minmax(0,1fr)] md:gap-7 md:px-7 md:py-7 xl:grid-cols-[124px_minmax(0,1fr)] xl:gap-9 xl:px-9">
+        <nav className="fixed bottom-4 left-4 right-4 z-40 grid grid-cols-3 gap-2 rounded-[1.5rem] border border-black/10 bg-white/90 p-2 shadow-2xl shadow-black/10 backdrop-blur md:sticky md:left-auto md:right-auto md:top-7 md:bottom-auto md:h-[calc(100vh-3.5rem)] md:grid-cols-1 md:content-start md:gap-3 md:p-3">
           <NavButton active={view === "learn"} icon={<BookOpen size={20} />} label="Learn" onClick={() => setView("learn")} />
           <NavButton active={view === "library"} icon={<Library size={20} />} label="Library" onClick={() => setView("library")} />
           <NavButton active={view === "roadmap"} icon={<Map size={20} />} label="Plan" onClick={() => setView("roadmap")} />
@@ -239,27 +237,23 @@ export function App() {
 
         {view === "learn" && (
           <section className="grid gap-5 pb-24 md:pb-0">
-            <div className="grid gap-5 lg:grid-cols-[0.75fr_1.25fr]">
-              <div className="rounded-[2rem] bg-black p-6 text-white md:p-8">
-                <p className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-white/50">
-                  <Sparkles size={14} />
-                  Fidel Labs
-                </p>
-                <h1 className="mt-7 text-5xl font-black leading-[0.92] tracking-tight md:text-7xl">
+            <div className="grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start xl:grid-cols-[410px_minmax(0,1fr)] xl:gap-8">
+              <div className="rounded-[2rem] bg-black p-6 text-white md:p-8 lg:sticky lg:top-7 xl:p-10">
+                <h1 className="text-5xl font-black leading-[0.92] tracking-tight md:text-6xl xl:text-7xl">
                   Learn Amharic fidel one tap at a time.
                 </h1>
                 <p className="mt-6 max-w-xl text-lg leading-8 text-white/62">
                   Pick a family, hear the sound, answer once, and the lesson keeps moving.
                 </p>
-                <div className="mt-8 grid grid-cols-3 gap-3">
+                <div className="mt-8 grid grid-cols-3 gap-3 lg:grid-cols-1 xl:grid-cols-3">
                   <Metric icon={<Flame size={19} />} label="day streak" value={streak} dark />
                   <Metric icon={<GraduationCap size={19} />} label="XP earned" value={xp} dark />
                   <Metric icon={<Target size={19} />} label="mastered" value={`${masteredCount}/${allItems.length}`} dark />
                 </div>
               </div>
 
-              <div className="grid gap-4">
-          <div className="grid gap-3 sm:grid-cols-5">
+              <div className="grid gap-5 xl:gap-6">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:gap-4">
             {lessons.map((lesson) => {
               const locked = lesson.state === "locked";
               const active = activeLesson.id === lesson.id;
@@ -268,7 +262,7 @@ export function App() {
                   key={lesson.id}
                   onClick={() => chooseLesson(lesson)}
                   className={[
-                    "rounded-2xl border p-4 text-left transition",
+                    "rounded-2xl border p-4 text-left transition xl:p-5",
                     active ? "border-black bg-black text-white" : "border-black/10 bg-white hover:-translate-y-0.5",
                     locked ? "cursor-not-allowed opacity-45 hover:translate-y-0" : "",
                   ].join(" ")}
@@ -284,7 +278,7 @@ export function App() {
             })}
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_340px] xl:gap-6">
             <LessonRunner
               activeExercise={activeExercise}
               activeItem={activeItem}
@@ -299,7 +293,7 @@ export function App() {
               selected={selected}
             />
 
-            <aside className="grid gap-4">
+            <aside className="grid content-start gap-4 xl:gap-5">
               <Panel title="Review queue" eyebrow={`${reviewQueue.length} weak items`}>
                 <div className="grid gap-2">
                   {reviewQueue.slice(0, 4).map((id) => {
@@ -335,7 +329,7 @@ export function App() {
         )}
 
         {view === "library" && (
-          <section className="rounded-[2rem] bg-white p-5 pb-24 md:p-8 md:pb-8">
+          <section className="min-h-[calc(100vh-3.5rem)] rounded-[2rem] bg-white p-5 pb-24 md:p-8 md:pb-8 xl:p-10">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.3em] text-black/38">
@@ -349,22 +343,22 @@ export function App() {
             </p>
           </div>
 
-          <div className="mt-10 grid gap-4 md:grid-cols-2">
+          <div className="mt-10 grid gap-4 md:grid-cols-2 xl:gap-6">
             {lessons.map((lesson) => (
-              <article key={lesson.id} className="rounded-[1.5rem] border border-black/10 bg-[#f7f7f4] p-5">
-                <div className="mb-5 flex items-center justify-between">
+              <article key={lesson.id} className="rounded-[1.5rem] border border-black/10 bg-[#f7f7f4] p-5 xl:p-6">
+                <div className="mb-5 flex items-start justify-between gap-5">
                   <div>
                     <h3 className="font-[var(--ethiopic)] text-3xl font-black">{lesson.title}</h3>
                     <p className="mt-1 text-sm text-black/55">{lesson.description}</p>
                   </div>
                   {lesson.state === "locked" && <Lock className="text-black/30" size={20} />}
                 </div>
-                <div className="grid grid-cols-7 gap-2">
+                <div className="grid grid-cols-7 gap-2 xl:gap-3">
                   {lesson.items.map((item) => (
                     <button
                       key={item.id}
                       onClick={() => speak(item.sound)}
-                      className="rounded-2xl border border-black/10 bg-white p-3 text-center transition hover:border-black"
+                      className="rounded-2xl border border-black/10 bg-white p-3 text-center transition hover:border-black xl:min-h-24 xl:p-4"
                     >
                       <span className="block font-[var(--ethiopic)] text-3xl font-black">{item.fidel}</span>
                       <span className="mt-1 block text-xs font-bold text-black/45">{item.sound}</span>
@@ -378,8 +372,8 @@ export function App() {
         )}
 
         {view === "roadmap" && (
-          <section className="grid content-center rounded-[2rem] bg-black p-6 pb-24 text-white md:p-10 md:pb-10">
-        <div className="grid gap-8 md:grid-cols-[0.8fr_1.2fr]">
+          <section className="grid min-h-[calc(100vh-3.5rem)] content-center rounded-[2rem] bg-black p-6 pb-24 text-white md:p-10 md:pb-10 xl:p-14">
+        <div className="mx-auto grid w-full max-w-6xl gap-8 md:grid-cols-[0.8fr_1.2fr] xl:gap-12">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.3em] text-white/38">what comes next</p>
             <h2 className="mt-4 text-4xl font-black tracking-tight md:text-6xl">Enough shape to build from.</h2>
@@ -478,7 +472,7 @@ function Metric({
   value: number | string;
 }) {
   return (
-    <div className={["rounded-2xl p-4", dark ? "bg-black text-white" : "border border-black/10 bg-white"].join(" ")}>
+    <div className={["rounded-2xl p-4", dark ? "border border-white/10 bg-white/6 text-white" : "border border-black/10 bg-white"].join(" ")}>
       {icon}
       <strong className="mt-4 block text-2xl">{value}</strong>
       <span className={["text-xs", dark ? "text-white/55" : "text-black/55"].join(" ")}>{label}</span>
