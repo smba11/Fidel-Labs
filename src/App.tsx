@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -7,6 +7,7 @@ import {
   GraduationCap,
   Library,
   Lock,
+  Map,
   RotateCcw,
   Sparkles,
   Target,
@@ -32,6 +33,7 @@ type Lesson = {
   description: string;
   items: { id: string; fidel: string; sound: string; note: string }[];
 };
+type View = "learn" | "library" | "roadmap";
 
 const lessons: Lesson[] = [
   {
@@ -155,14 +157,17 @@ function makeExercises(lesson: Lesson): Exercise[] {
 }
 
 export function App() {
+  const [view, setView] = useState<View>("learn");
   const [activeLessonId, setActiveLessonId] = useState("ha");
   const [exerciseIndex, setExerciseIndex] = useState(0);
   const [answerState, setAnswerState] = useState<AnswerState>("idle");
   const [selected, setSelected] = useState<string | null>(null);
+  const [celebration, setCelebration] = useState<"correct" | "wrong" | null>(null);
   const [xp, setXp] = useState(180);
   const [streak, setStreak] = useState(4);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
   const [reviewQueue, setReviewQueue] = useState(["ha-4", "ha-6", "ha-7"]);
+  const advanceTimer = useRef<number | null>(null);
 
   const activeLesson = lessons.find((lesson) => lesson.id === activeLessonId) ?? lessons[0];
   const exercises = useMemo(() => makeExercises(activeLesson), [activeLesson]);
@@ -172,12 +177,21 @@ export function App() {
   const allItems = lessons.flatMap((lesson) => lesson.items.map((item) => ({ ...item, family: lesson.shortTitle })));
   const masteredCount = allItems.filter((item) => completedLessons.includes(item.id.split("-")[0]) || item.id.startsWith("ha")).length;
 
+  useEffect(() => {
+    return () => {
+      if (advanceTimer.current) window.clearTimeout(advanceTimer.current);
+    };
+  }, []);
+
   function chooseLesson(lesson: Lesson) {
     if (lesson.state === "locked") return;
+    if (advanceTimer.current) window.clearTimeout(advanceTimer.current);
     setActiveLessonId(lesson.id);
     setExerciseIndex(0);
     setSelected(null);
     setAnswerState("idle");
+    setCelebration(null);
+    speak(lesson.items[0].sound);
   }
 
   function choose(choice: string) {
@@ -185,12 +199,21 @@ export function App() {
     const correct = activeExercise.answer === choice;
     setSelected(choice);
     setAnswerState(correct ? "correct" : "wrong");
+    setCelebration(correct ? "correct" : "wrong");
     if (correct) {
       setXp((value) => value + 5);
       setReviewQueue((items) => items.filter((id) => id !== activeExercise.tracks));
+      playTone(660, 0.08);
+      window.setTimeout(() => playTone(880, 0.1), 95);
     } else {
       setReviewQueue((items) => [activeExercise.tracks, ...items.filter((id) => id !== activeExercise.tracks)].slice(0, 8));
+      playTone(180, 0.12);
     }
+    speak(correct ? activeExercise.answer : choice);
+    advanceTimer.current = window.setTimeout(() => {
+      next();
+      setCelebration(null);
+    }, correct ? 920 : 1150);
   }
 
   function next() {
@@ -207,72 +230,35 @@ export function App() {
 
   return (
     <main className="min-h-screen bg-[#f7f7f4] text-black">
-      <header className="sticky top-0 z-30 border-b border-black/10 bg-[#f7f7f4]/85 px-5 py-4 backdrop-blur md:px-8">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <a href="#top" className="flex items-center gap-3">
-            <span className="grid size-11 place-items-center rounded-xl bg-black font-[var(--ethiopic)] text-2xl font-black text-white">
-              ፊ
-            </span>
-            <span>
-              <strong className="block text-xl font-black tracking-tight">Fidel Labs</strong>
-              <small className="block text-xs font-bold uppercase tracking-[0.22em] text-black/45">
-                Amharic fidel demo
-              </small>
-            </span>
-          </a>
+      <div className="mx-auto grid min-h-screen max-w-7xl gap-5 px-4 py-4 md:grid-cols-[92px_1fr] md:px-6">
+        <nav className="fixed bottom-4 left-4 right-4 z-40 grid grid-cols-3 gap-2 rounded-[1.5rem] border border-black/10 bg-white/90 p-2 shadow-2xl shadow-black/10 backdrop-blur md:sticky md:left-auto md:right-auto md:top-4 md:bottom-auto md:h-[calc(100vh-2rem)] md:grid-cols-1 md:content-start">
+          <NavButton active={view === "learn"} icon={<BookOpen size={20} />} label="Learn" onClick={() => setView("learn")} />
+          <NavButton active={view === "library"} icon={<Library size={20} />} label="Library" onClick={() => setView("library")} />
+          <NavButton active={view === "roadmap"} icon={<Map size={20} />} label="Plan" onClick={() => setView("roadmap")} />
+        </nav>
 
-          <nav className="hidden items-center gap-2 md:flex">
-            <a className="rounded-full border border-black/10 px-4 py-2 text-sm font-bold" href="#lesson">
-              Lesson
-            </a>
-            <a className="rounded-full border border-black/10 px-4 py-2 text-sm font-bold" href="#library">
-              Library
-            </a>
-            <a className="rounded-full border border-black/10 px-4 py-2 text-sm font-bold" href="#roadmap">
-              Roadmap
-            </a>
-          </nav>
-        </div>
-      </header>
+        {view === "learn" && (
+          <section className="grid gap-5 pb-24 md:pb-0">
+            <div className="grid gap-5 lg:grid-cols-[0.75fr_1.25fr]">
+              <div className="rounded-[2rem] bg-black p-6 text-white md:p-8">
+                <p className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-white/50">
+                  <Sparkles size={14} />
+                  Fidel Labs
+                </p>
+                <h1 className="mt-7 text-5xl font-black leading-[0.92] tracking-tight md:text-7xl">
+                  Learn Amharic fidel one tap at a time.
+                </h1>
+                <p className="mt-6 max-w-xl text-lg leading-8 text-white/62">
+                  Pick a family, hear the sound, answer once, and the lesson keeps moving.
+                </p>
+                <div className="mt-8 grid grid-cols-3 gap-3">
+                  <Metric icon={<Flame size={19} />} label="day streak" value={streak} dark />
+                  <Metric icon={<GraduationCap size={19} />} label="XP earned" value={xp} dark />
+                  <Metric icon={<Target size={19} />} label="mastered" value={`${masteredCount}/${allItems.length}`} dark />
+                </div>
+              </div>
 
-      <section
-        id="top"
-        className="mx-auto grid min-h-[calc(100vh-78px)] max-w-7xl items-center gap-8 px-5 py-12 md:grid-cols-[0.82fr_1.18fr] md:px-8"
-      >
-        <div>
-          <p className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-black/55">
-            <Sparkles size={14} />
-            Expanded v1 demo
-          </p>
-          <h1 className="mt-6 max-w-3xl text-5xl font-black leading-[0.92] tracking-tight md:text-7xl">
-            Learn Amharic fidel one tap at a time.
-          </h1>
-          <p className="mt-6 max-w-xl text-lg leading-8 text-black/62">
-            A fuller product demo with lesson selection, mastery feedback, review queue, first words, and a browseable fidel library.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <a
-              href="#lesson"
-              className="inline-flex items-center gap-2 rounded-full bg-black px-6 py-4 text-sm font-black text-white transition hover:scale-[1.02]"
-            >
-              Try lesson <ArrowRight size={17} />
-            </a>
-            <a
-              href="#library"
-              className="inline-flex items-center gap-2 rounded-full border border-black/12 bg-white px-6 py-4 text-sm font-black"
-            >
-              Browse fidel
-            </a>
-          </div>
-
-          <div className="mt-10 grid max-w-xl grid-cols-3 gap-3">
-            <Metric icon={<Flame size={19} />} label="day streak" value={streak} dark />
-            <Metric icon={<GraduationCap size={19} />} label="XP earned" value={xp} />
-            <Metric icon={<Target size={19} />} label="mastered" value={`${masteredCount}/${allItems.length}`} />
-          </div>
-        </div>
-
-        <section id="lesson" className="grid gap-4">
+              <div className="grid gap-4">
           <div className="grid gap-3 sm:grid-cols-5">
             {lessons.map((lesson) => {
               const locked = lesson.state === "locked";
@@ -303,11 +289,12 @@ export function App() {
               activeExercise={activeExercise}
               activeItem={activeItem}
               answerState={answerState}
+              celebration={celebration}
               exerciseIndex={exerciseIndex}
               exercisesLength={exercises.length}
               lesson={activeLesson}
               onChoose={choose}
-              onNext={next}
+              onSpeak={speak}
               progress={progress}
               selected={selected}
             />
@@ -342,11 +329,13 @@ export function App() {
               </Panel>
             </aside>
           </div>
+              </div>
+            </div>
         </section>
-      </section>
+        )}
 
-      <section id="library" className="border-t border-black/10 bg-white px-5 py-20 md:px-8">
-        <div className="mx-auto max-w-7xl">
+        {view === "library" && (
+          <section className="rounded-[2rem] bg-white p-5 pb-24 md:p-8 md:pb-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.3em] text-black/38">
@@ -372,7 +361,11 @@ export function App() {
                 </div>
                 <div className="grid grid-cols-7 gap-2">
                   {lesson.items.map((item) => (
-                    <button key={item.id} className="rounded-2xl border border-black/10 bg-white p-3 text-center transition hover:border-black">
+                    <button
+                      key={item.id}
+                      onClick={() => speak(item.sound)}
+                      className="rounded-2xl border border-black/10 bg-white p-3 text-center transition hover:border-black"
+                    >
                       <span className="block font-[var(--ethiopic)] text-3xl font-black">{item.fidel}</span>
                       <span className="mt-1 block text-xs font-bold text-black/45">{item.sound}</span>
                     </button>
@@ -381,11 +374,12 @@ export function App() {
               </article>
             ))}
           </div>
-        </div>
-      </section>
+          </section>
+        )}
 
-      <section id="roadmap" className="bg-black px-5 py-20 text-white md:px-8">
-        <div className="mx-auto grid max-w-7xl gap-8 md:grid-cols-[0.8fr_1.2fr]">
+        {view === "roadmap" && (
+          <section className="grid content-center rounded-[2rem] bg-black p-6 pb-24 text-white md:p-10 md:pb-10">
+        <div className="grid gap-8 md:grid-cols-[0.8fr_1.2fr]">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.3em] text-white/38">what comes next</p>
             <h2 className="mt-4 text-4xl font-black tracking-tight md:text-6xl">Enough shape to build from.</h2>
@@ -404,8 +398,71 @@ export function App() {
             ))}
           </div>
         </div>
-      </section>
+          </section>
+        )}
+      </div>
     </main>
+  );
+}
+
+function speak(text: string) {
+  if (typeof window === "undefined") return;
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = /[\u1200-\u137F]/.test(text) ? "am-ET" : "en-US";
+    utterance.rate = 0.72;
+    utterance.pitch = 1;
+    window.speechSynthesis.speak(utterance);
+  } else {
+    playTone(520, 0.12);
+  }
+}
+
+function playTone(frequency: number, duration: number) {
+  try {
+    const AudioContextCtor =
+      window.AudioContext ||
+      (window as typeof window & { webkitAudioContext?: typeof window.AudioContext }).webkitAudioContext;
+    if (!AudioContextCtor) return;
+    const context = new AudioContextCtor();
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.frequency.value = frequency;
+    oscillator.type = "sine";
+    gain.gain.setValueAtTime(0.05, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + duration);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start();
+    oscillator.stop(context.currentTime + duration);
+  } catch {
+    // Audio is best-effort in browser previews.
+  }
+}
+
+function NavButton({
+  active,
+  icon,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={[
+        "flex min-h-16 flex-col items-center justify-center gap-1 rounded-2xl text-xs font-black transition",
+        active ? "bg-black text-white" : "text-black/55 hover:bg-black/5 hover:text-black",
+      ].join(" ")}
+    >
+      {icon}
+      {label}
+    </button>
   );
 }
 
@@ -443,27 +500,44 @@ function LessonRunner({
   activeExercise,
   activeItem,
   answerState,
+  celebration,
   exerciseIndex,
   exercisesLength,
   lesson,
   onChoose,
-  onNext,
+  onSpeak,
   progress,
   selected,
 }: {
   activeExercise: Exercise;
   activeItem?: Lesson["items"][number];
   answerState: AnswerState;
+  celebration: "correct" | "wrong" | null;
   exerciseIndex: number;
   exercisesLength: number;
   lesson: Lesson;
   onChoose: (choice: string) => void;
-  onNext: () => void;
+  onSpeak: (text: string) => void;
   progress: number;
   selected: string | null;
 }) {
   return (
-    <article className="rounded-[2rem] border border-black/10 bg-white p-4 shadow-2xl shadow-black/10 md:p-6">
+    <article className="relative overflow-hidden rounded-[2rem] border border-black/10 bg-white p-4 shadow-2xl shadow-black/10 md:p-6">
+      {celebration && (
+        <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center bg-white/45 backdrop-blur-[2px]">
+          <div
+            className={[
+              "fidel-pop grid size-36 place-items-center rounded-full border-4 text-center shadow-2xl",
+              celebration === "correct" ? "border-black bg-black text-white shadow-black/25" : "border-red-500 bg-red-50 text-red-700 shadow-red-500/15",
+            ].join(" ")}
+          >
+            <span className="font-[var(--ethiopic)] text-5xl font-black">
+              {celebration === "correct" ? "ጎበዝ" : "እንደገና"}
+            </span>
+          </div>
+          {celebration === "correct" && <div className="fidel-burst" />}
+        </div>
+      )}
       <div className="flex items-center gap-3">
         <div className="h-3 flex-1 overflow-hidden rounded-full bg-black/8">
           <span className="block h-full rounded-full bg-black transition-all" style={{ width: `${Math.max(18, progress)}%` }} />
@@ -481,7 +555,11 @@ function LessonRunner({
         <div className="mt-6 grid min-h-32 place-items-center font-[var(--ethiopic)] text-8xl font-black">
           {activeExercise.prompt}
         </div>
-        <button className="mx-auto mt-4 grid size-14 place-items-center rounded-full bg-black text-white" aria-label="Play sound">
+        <button
+          className="mx-auto mt-4 grid size-14 place-items-center rounded-full bg-black text-white"
+          aria-label="Play sound"
+          onClick={() => onSpeak(activeItem?.sound ?? activeExercise.prompt)}
+        >
           <Volume2 size={26} />
         </button>
         {activeItem && <p className="mt-4 text-sm font-bold text-black/45">{activeItem.note}</p>}
@@ -495,6 +573,7 @@ function LessonRunner({
             <button
               key={choice}
               onClick={() => onChoose(choice)}
+              disabled={answerState !== "idle"}
               className={[
                 "min-h-24 rounded-2xl border p-4 text-center transition hover:-translate-y-0.5",
                 correct ? "border-black bg-black text-white" : "",
@@ -511,19 +590,14 @@ function LessonRunner({
       <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm font-bold text-black/55">
           {answerState === "idle" && "Choose an answer to continue."}
-          {answerState === "correct" && "Correct. Mastery went up."}
-          {answerState === "wrong" && "Almost. Added to review."}
+          {answerState === "correct" && "Correct. Moving on..."}
+          {answerState === "wrong" && "Added to review. Next one coming..."}
         </p>
-        <button
-          onClick={answerState === "idle" ? undefined : onNext}
-          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-black px-6 text-sm font-black text-white disabled:opacity-35"
-          disabled={answerState === "idle"}
-        >
+        <span className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-black/10 px-5 text-sm font-black text-black/55">
           {exerciseIndex === exercisesLength - 1 ? <RotateCcw size={17} /> : <Check size={17} />}
-          {exerciseIndex === exercisesLength - 1 ? "Finish" : "Continue"}
-        </button>
+          Auto-advance
+        </span>
       </div>
     </article>
   );
 }
-
