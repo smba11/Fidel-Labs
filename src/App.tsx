@@ -4,9 +4,11 @@ import {
   Check,
   Flame,
   GraduationCap,
+  Headphones,
   Library,
   Lock,
   Map,
+  Mic2,
   RotateCcw,
   Target,
   Volume2,
@@ -14,9 +16,10 @@ import {
 
 type AnswerState = "idle" | "correct" | "wrong";
 type LessonState = "done" | "active" | "available" | "locked";
+type PracticeMode = "fidel" | "words";
 type Exercise = {
   id: string;
-  promptType: "sound-to-fidel" | "fidel-to-sound";
+  promptType: "sound-to-fidel" | "fidel-to-sound" | "word-to-meaning" | "meaning-to-word";
   prompt: string;
   answer: string;
   choices: string[];
@@ -30,6 +33,14 @@ type Lesson = {
   glyph: string;
   description: string;
   items: { id: string; fidel: string; sound: string; note: string }[];
+};
+type Word = {
+  id: string;
+  amharic: string;
+  romanization: string;
+  meaning: string;
+  note: string;
+  status: "live" | "preview";
 };
 type View = "learn" | "library" | "roadmap";
 
@@ -104,10 +115,15 @@ const lessons: Lesson[] = [
   },
 ];
 
-const words = [
-  { amharic: "ሰላም", romanization: "selam", meaning: "hello / peace", status: "preview" },
-  { amharic: "ማር", romanization: "mar", meaning: "honey", status: "locked" },
-  { amharic: "ልብ", romanization: "lib", meaning: "heart", status: "locked" },
+const words: Word[] = [
+  { id: "word-selam", amharic: "ሰላም", romanization: "selam", meaning: "hello / peace", note: "common greeting", status: "live" },
+  { id: "word-wiha", amharic: "ውሃ", romanization: "wiha", meaning: "water", note: "daily essential", status: "live" },
+  { id: "word-bet", amharic: "ቤት", romanization: "bet", meaning: "house / home", note: "place word", status: "live" },
+  { id: "word-buna", amharic: "ቡና", romanization: "buna", meaning: "coffee", note: "culture word", status: "live" },
+  { id: "word-enat", amharic: "እናት", romanization: "enat", meaning: "mother", note: "family word", status: "preview" },
+  { id: "word-abat", amharic: "አባት", romanization: "abat", meaning: "father", note: "family word", status: "preview" },
+  { id: "word-injera", amharic: "እንጀራ", romanization: "injera", meaning: "injera", note: "food word", status: "preview" },
+  { id: "word-thanks", amharic: "አመሰግናለሁ", romanization: "ameseginalehu", meaning: "thank you", note: "polite phrase", status: "preview" },
 ];
 
 function makeExercises(lesson: Lesson): Exercise[] {
@@ -154,8 +170,44 @@ function makeExercises(lesson: Lesson): Exercise[] {
   ];
 }
 
+function makeWordExercises(): Exercise[] {
+  const liveWords = words.filter((word) => word.status === "live");
+  const allMeanings = words.map((word) => word.meaning);
+  const allAmharic = words.map((word) => word.amharic);
+
+  return liveWords.flatMap((word, index) => {
+    const meaningChoices = uniqueChoices(word.meaning, allMeanings, index);
+    const wordChoices = uniqueChoices(word.amharic, allAmharic, index);
+
+    return [
+      {
+        id: `${word.id}-meaning`,
+        promptType: "word-to-meaning",
+        prompt: word.amharic,
+        answer: word.meaning,
+        choices: meaningChoices,
+        tracks: word.id,
+      },
+      {
+        id: `${word.id}-word`,
+        promptType: "meaning-to-word",
+        prompt: word.meaning,
+        answer: word.amharic,
+        choices: wordChoices,
+        tracks: word.id,
+      },
+    ];
+  });
+}
+
+function uniqueChoices(answer: string, source: string[], offset: number) {
+  const rotated = [...source.slice(offset + 1), ...source.slice(0, offset + 1)];
+  return [...new Set([answer, ...rotated.filter((item) => item !== answer)])].slice(0, 4);
+}
+
 export function App() {
   const [view, setView] = useState<View>("learn");
+  const [practiceMode, setPracticeMode] = useState<PracticeMode>("fidel");
   const [activeLessonId, setActiveLessonId] = useState("ha");
   const [exerciseIndex, setExerciseIndex] = useState(0);
   const [answerState, setAnswerState] = useState<AnswerState>("idle");
@@ -168,9 +220,13 @@ export function App() {
   const advanceTimer = useRef<number | null>(null);
 
   const activeLesson = lessons.find((lesson) => lesson.id === activeLessonId) ?? lessons[0];
-  const exercises = useMemo(() => makeExercises(activeLesson), [activeLesson]);
+  const exercises = useMemo(
+    () => (practiceMode === "fidel" ? makeExercises(activeLesson) : makeWordExercises()),
+    [activeLesson, practiceMode]
+  );
   const activeExercise = exercises[exerciseIndex] ?? exercises[0];
   const activeItem = activeLesson.items.find((item) => item.id === activeExercise.tracks);
+  const activeWord = words.find((word) => word.id === activeExercise.tracks);
   const progress = ((exerciseIndex + (answerState === "correct" ? 1 : 0)) / exercises.length) * 100;
   const allItems = lessons.flatMap((lesson) => lesson.items.map((item) => ({ ...item, family: lesson.shortTitle })));
   const masteredCount = allItems.filter((item) => completedLessons.includes(item.id.split("-")[0]) || item.id.startsWith("ha")).length;
@@ -192,6 +248,16 @@ export function App() {
     speak(lesson.items[0].sound);
   }
 
+  function chooseMode(mode: PracticeMode) {
+    if (advanceTimer.current) window.clearTimeout(advanceTimer.current);
+    setPracticeMode(mode);
+    setExerciseIndex(0);
+    setSelected(null);
+    setAnswerState("idle");
+    setCelebration(null);
+    if (mode === "words") speak(words[0].amharic);
+  }
+
   function choose(choice: string) {
     if (answerState !== "idle") return;
     const correct = activeExercise.answer === choice;
@@ -207,7 +273,7 @@ export function App() {
       setReviewQueue((items) => [activeExercise.tracks, ...items.filter((id) => id !== activeExercise.tracks)].slice(0, 8));
       playTone(180, 0.12);
     }
-    speak(correct ? activeExercise.answer : choice);
+    speak(getSpeechText(activeExercise, activeWord, correct ? activeExercise.answer : choice));
     advanceTimer.current = window.setTimeout(() => {
       next();
       setCelebration(null);
@@ -243,7 +309,7 @@ export function App() {
                   Learn Amharic fidel one tap at a time.
                 </h1>
                 <p className="mt-6 max-w-xl text-lg leading-8 text-white/62">
-                  Pick a family, hear the sound, answer once, and the lesson keeps moving.
+                  Switch between fidel sounds and real beginner words. Native recordings are the next audio pass.
                 </p>
                 <div className="mt-8 grid grid-cols-3 gap-3 lg:grid-cols-1 xl:grid-cols-3">
                   <Metric icon={<Flame size={19} />} label="day streak" value={streak} dark />
@@ -253,6 +319,12 @@ export function App() {
               </div>
 
               <div className="grid gap-5 xl:gap-6">
+          <div className="grid grid-cols-2 gap-3 rounded-[1.5rem] border border-black/10 bg-white p-2">
+            <ModeButton active={practiceMode === "fidel"} icon={<BookOpen size={18} />} label="Fidel" onClick={() => chooseMode("fidel")} />
+            <ModeButton active={practiceMode === "words"} icon={<Mic2 size={18} />} label="Words" onClick={() => chooseMode("words")} />
+          </div>
+
+          {practiceMode === "fidel" ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:gap-4">
             {lessons.map((lesson) => {
               const locked = lesson.state === "locked";
@@ -277,6 +349,21 @@ export function App() {
               );
             })}
           </div>
+          ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:gap-4">
+            {words.slice(0, 4).map((word) => (
+              <button
+                key={word.id}
+                onClick={() => speak(word.amharic)}
+                className="rounded-2xl border border-black/10 bg-white p-4 text-left transition hover:-translate-y-0.5 hover:border-black xl:p-5"
+              >
+                <span className="font-[var(--ethiopic)] text-4xl font-black">{word.amharic}</span>
+                <strong className="mt-4 block text-sm">{word.meaning}</strong>
+                <span className="mt-2 block text-xs text-black/50">{word.romanization}</span>
+              </button>
+            ))}
+          </div>
+          )}
 
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_340px] xl:gap-6">
             <LessonRunner
@@ -287,10 +374,12 @@ export function App() {
               exerciseIndex={exerciseIndex}
               exercisesLength={exercises.length}
               lesson={activeLesson}
+              mode={practiceMode}
               onChoose={choose}
               onSpeak={speak}
               progress={progress}
               selected={selected}
+              word={activeWord}
             />
 
             <aside className="grid content-start gap-4 xl:gap-5">
@@ -298,12 +387,13 @@ export function App() {
                 <div className="grid gap-2">
                   {reviewQueue.slice(0, 4).map((id) => {
                     const item = allItems.find((entry) => entry.id === id);
-                    if (!item) return null;
+                    const word = words.find((entry) => entry.id === id);
+                    if (!item && !word) return null;
                     return (
                       <div key={id} className="rounded-2xl border border-black/10 bg-[#fafafa] p-3">
-                        <span className="font-[var(--ethiopic)] text-3xl font-black">{item.fidel}</span>
-                        <strong className="ml-3">{item.sound}</strong>
-                        <p className="mt-1 text-xs text-black/50">{item.note}</p>
+                        <span className="font-[var(--ethiopic)] text-3xl font-black">{item?.fidel ?? word?.amharic}</span>
+                        <strong className="ml-3">{item?.sound ?? word?.romanization}</strong>
+                        <p className="mt-1 text-xs text-black/50">{item?.note ?? word?.meaning}</p>
                       </div>
                     );
                   })}
@@ -312,12 +402,12 @@ export function App() {
 
               <Panel title="First words" eyebrow="preview">
                 <div className="grid gap-2">
-                  {words.map((word) => (
-                    <div key={word.amharic} className="rounded-2xl border border-black/10 p-3">
+                  {words.slice(0, 4).map((word) => (
+                    <button key={word.amharic} onClick={() => speak(word.amharic)} className="rounded-2xl border border-black/10 p-3 text-left transition hover:border-black">
                       <span className="font-[var(--ethiopic)] text-2xl font-black">{word.amharic}</span>
                       <strong className="ml-3 text-sm">{word.romanization}</strong>
                       <p className="mt-1 text-xs text-black/50">{word.meaning}</p>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </Panel>
@@ -368,6 +458,27 @@ export function App() {
               </article>
             ))}
           </div>
+          <div className="mt-6 rounded-[1.5rem] border border-black/10 bg-[#f7f7f4] p-5 xl:p-6">
+            <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h3 className="text-2xl font-black">Beginner word bank</h3>
+                <p className="mt-1 text-sm text-black/55">Tap any word to hear the current prototype voice while native clips are prepared.</p>
+              </div>
+              <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-black/40">
+                <Headphones size={15} />
+                native audio next
+              </span>
+            </div>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {words.map((word) => (
+                <button key={word.id} onClick={() => speak(word.amharic)} className="rounded-2xl border border-black/10 bg-white p-4 text-left transition hover:border-black">
+                  <span className="font-[var(--ethiopic)] text-3xl font-black">{word.amharic}</span>
+                  <strong className="mt-3 block text-sm">{word.meaning}</strong>
+                  <span className="mt-1 block text-xs text-black/50">{word.romanization} · {word.note}</span>
+                </button>
+              ))}
+            </div>
+          </div>
           </section>
         )}
 
@@ -380,10 +491,10 @@ export function App() {
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             {[
-              ["Audio pass", "Record native speaker clips for every fidel and first word."],
+              ["Audio pass", "Use Lingua Libre/Wikimedia for word clips, then record native fidel syllables."],
+              ["Corpus mining", "Use ALFFA or Common Voice to find natural examples once licensing is checked."],
               ["Progress storage", "Save XP, streak, mastery, and review timing locally first."],
               ["More exercises", "Add match pairs, build word, and handwriting practice."],
-              ["Auth later", "Sync progress with Supabase after the local loop feels strong."],
             ].map(([title, copy]) => (
               <div key={title} className="rounded-3xl border border-white/10 bg-white/5 p-6">
                 <strong className="text-xl">{title}</strong>
@@ -397,6 +508,13 @@ export function App() {
       </div>
     </main>
   );
+}
+
+function getSpeechText(exercise: Exercise, word: Word | undefined, fallback: string) {
+  if (exercise.promptType === "word-to-meaning" || exercise.promptType === "meaning-to-word") {
+    return word?.amharic ?? fallback;
+  }
+  return fallback;
 }
 
 function speak(text: string) {
@@ -449,9 +567,36 @@ function NavButton({
   return (
     <button
       onClick={onClick}
+      style={active ? { backgroundColor: "#000", color: "#fff" } : undefined}
       className={[
         "flex min-h-16 flex-col items-center justify-center gap-1 rounded-2xl text-xs font-black transition",
-        active ? "bg-black text-white" : "text-black/55 hover:bg-black/5 hover:text-black",
+        active ? "bg-black text-white hover:bg-black" : "text-black/55 hover:bg-black/5 hover:text-black",
+      ].join(" ")}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
+function ModeButton({
+  active,
+  icon,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={active ? { backgroundColor: "#000", color: "#fff" } : undefined}
+      className={[
+        "flex min-h-14 items-center justify-center gap-2 rounded-[1.1rem] text-sm font-black transition",
+        active ? "bg-black text-white hover:bg-black" : "text-black/55 hover:bg-black/5 hover:text-black",
       ].join(" ")}
     >
       {icon}
@@ -498,10 +643,12 @@ function LessonRunner({
   exerciseIndex,
   exercisesLength,
   lesson,
+  mode,
   onChoose,
   onSpeak,
   progress,
   selected,
+  word,
 }: {
   activeExercise: Exercise;
   activeItem?: Lesson["items"][number];
@@ -510,11 +657,24 @@ function LessonRunner({
   exerciseIndex: number;
   exercisesLength: number;
   lesson: Lesson;
+  mode: PracticeMode;
   onChoose: (choice: string) => void;
   onSpeak: (text: string) => void;
   progress: number;
   selected: string | null;
+  word?: Word;
 }) {
+  const isWordMode = mode === "words";
+  const promptIsFidel = /[\u1200-\u137F]/.test(activeExercise.prompt);
+  const promptLabel =
+    activeExercise.promptType === "fidel-to-sound"
+      ? "Choose the sound"
+      : activeExercise.promptType === "sound-to-fidel"
+        ? "Choose the fidel"
+        : activeExercise.promptType === "word-to-meaning"
+          ? "Choose the meaning"
+          : "Choose the Amharic word";
+
   return (
     <article className="relative overflow-hidden rounded-[2rem] border border-black/10 bg-white p-4 shadow-2xl shadow-black/10 md:p-6">
       {celebration && (
@@ -542,21 +702,26 @@ function LessonRunner({
       </div>
 
       <div className="py-10 text-center">
-        <p className="font-[var(--ethiopic)] text-lg font-black">{lesson.title}</p>
+        <p className="font-[var(--ethiopic)] text-lg font-black">{isWordMode ? "Beginner words" : lesson.title}</p>
         <h2 className="mt-5 text-2xl font-black">
-          {activeExercise.promptType === "fidel-to-sound" ? "Choose the sound" : "Choose the fidel"}
+          {promptLabel}
         </h2>
-        <div className="mt-6 grid min-h-32 place-items-center font-[var(--ethiopic)] text-8xl font-black">
+        <div
+          className={[
+            "mt-6 grid min-h-32 place-items-center font-black",
+            promptIsFidel ? "font-[var(--ethiopic)] text-8xl" : "text-5xl leading-tight md:text-6xl",
+          ].join(" ")}
+        >
           {activeExercise.prompt}
         </div>
         <button
           className="mx-auto mt-4 grid size-14 place-items-center rounded-full bg-black text-white"
           aria-label="Play sound"
-          onClick={() => onSpeak(activeItem?.sound ?? activeExercise.prompt)}
+          onClick={() => onSpeak(word?.amharic ?? activeItem?.sound ?? activeExercise.prompt)}
         >
           <Volume2 size={26} />
         </button>
-        {activeItem && <p className="mt-4 text-sm font-bold text-black/45">{activeItem.note}</p>}
+        {(activeItem || word) && <p className="mt-4 text-sm font-bold text-black/45">{activeItem?.note ?? `${word?.romanization} · ${word?.note}`}</p>}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -575,7 +740,9 @@ function LessonRunner({
                 !correct && !wrong ? "border-black/10 bg-[#fafafa]" : "",
               ].join(" ")}
             >
-              <strong className="block font-[var(--ethiopic)] text-3xl">{choice}</strong>
+              <strong className={["block", /[\u1200-\u137F]/.test(choice) ? "font-[var(--ethiopic)] text-3xl" : "text-xl"].join(" ")}>
+                {choice}
+              </strong>
             </button>
           );
         })}
