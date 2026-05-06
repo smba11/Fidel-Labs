@@ -42,6 +42,11 @@ type Word = {
   note: string;
   status: "live" | "preview";
 };
+type NativeSample = {
+  id: string;
+  transcription: string;
+  audioUrl: string;
+};
 type View = "learn" | "library" | "roadmap";
 
 const lessons: Lesson[] = [
@@ -217,6 +222,8 @@ export function App() {
   const [streak, setStreak] = useState(4);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
   const [reviewQueue, setReviewQueue] = useState(["ha-4", "ha-6", "ha-7"]);
+  const [nativeSamples, setNativeSamples] = useState<NativeSample[]>([]);
+  const [nativeStatus, setNativeStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const advanceTimer = useRef<number | null>(null);
 
   const activeLesson = lessons.find((lesson) => lesson.id === activeLessonId) ?? lessons[0];
@@ -290,6 +297,34 @@ export function App() {
     }
     setSelected(null);
     setAnswerState("idle");
+  }
+
+  async function loadNativeSamples() {
+    if (nativeStatus === "loading") return;
+    setNativeStatus("loading");
+    try {
+      const response = await fetch(
+        "https://datasets-server.huggingface.co/rows?dataset=hadamard-2/alffa-amharic-v2&config=default&split=test&offset=7&length=4"
+      );
+      if (!response.ok) throw new Error("Unable to load ALFFA rows");
+      const data = await response.json();
+      const samples = data.rows
+        .map((entry: { row: { id: string; transcription: string; audio?: { src: string }[] } }) => ({
+          id: entry.row.id,
+          transcription: entry.row.transcription,
+          audioUrl: entry.row.audio?.[0]?.src,
+        }))
+        .filter((sample: NativeSample) => sample.audioUrl);
+      setNativeSamples(samples);
+      setNativeStatus("ready");
+    } catch {
+      setNativeStatus("error");
+    }
+  }
+
+  function playNativeSample(sample: NativeSample) {
+    const audio = new Audio(sample.audioUrl);
+    void audio.play();
   }
 
   return (
@@ -407,6 +442,32 @@ export function App() {
                       <span className="font-[var(--ethiopic)] text-2xl font-black">{word.amharic}</span>
                       <strong className="ml-3 text-sm">{word.romanization}</strong>
                       <p className="mt-1 text-xs text-black/50">{word.meaning}</p>
+                    </button>
+                  ))}
+                </div>
+              </Panel>
+
+              <Panel title="Native samples" eyebrow="ALFFA v2">
+                <p className="text-sm leading-6 text-black/55">
+                  Real Amharic sentence audio from Hugging Face. Useful now for listening; later we can cut word-level clips.
+                </p>
+                <button
+                  onClick={loadNativeSamples}
+                  className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-black px-4 text-sm font-black text-white"
+                >
+                  <Headphones size={17} />
+                  {nativeStatus === "loading" ? "Loading..." : nativeStatus === "ready" ? "Refresh clips" : "Load native clips"}
+                </button>
+                {nativeStatus === "error" && <p className="mt-3 text-sm font-bold text-red-600">Could not load the dataset preview.</p>}
+                <div className="mt-4 grid gap-2">
+                  {nativeSamples.map((sample) => (
+                    <button
+                      key={sample.id}
+                      onClick={() => playNativeSample(sample)}
+                      className="rounded-2xl border border-black/10 bg-[#fafafa] p-3 text-left transition hover:border-black"
+                    >
+                      <span className="text-xs font-black uppercase tracking-[0.18em] text-black/35">{sample.id}</span>
+                      <p className="mt-2 line-clamp-2 font-[var(--ethiopic)] text-sm font-bold leading-6">{sample.transcription}</p>
                     </button>
                   ))}
                 </div>
