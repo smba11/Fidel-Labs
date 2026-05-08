@@ -12,9 +12,12 @@ import {
   Play,
   RotateCcw,
   Search,
+  Star,
   Target,
+  Trophy,
   Volume2,
   Waves,
+  Zap,
 } from "lucide-react";
 
 type AnswerState = "idle" | "correct" | "wrong";
@@ -710,34 +713,125 @@ export function App() {
         )}
 
         {view === "roadmap" && (
-          <section className="grid min-h-[calc(100vh-3.5rem)] content-center rounded-[2rem] bg-black p-6 pb-24 text-white md:p-10 md:pb-10 xl:p-14">
-            <div className="mx-auto grid w-full max-w-6xl gap-8 md:grid-cols-[0.78fr_1.22fr] xl:gap-12">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.3em] text-white/38">build plan</p>
-                <h2 className="mt-4 text-4xl font-black tracking-tight md:text-6xl">From demo to real course.</h2>
-                <p className="mt-5 text-sm leading-7 text-white/55">
-                  The app now has the core loop: fidel, words, listening, library, progress, and an authentic audio source.
-                </p>
-                <button onClick={resetProgress} className="mt-8 inline-flex min-h-12 items-center gap-2 rounded-2xl border border-white/15 px-5 text-sm font-black text-white/70 transition hover:bg-white/10">
+          <section className="min-h-[calc(100vh-3.5rem)] rounded-[2rem] bg-white p-5 pb-24 md:p-8 md:pb-8 xl:p-10">
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+              <div className="overflow-hidden rounded-[2rem] border border-black/10 bg-[#f7f7f4]">
+                <div className="bg-black p-6 text-white md:p-8">
+                  <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.28em] text-white/45">Unit 1</p>
+                      <h2 className="mt-3 text-4xl font-black tracking-tight md:text-6xl">Fidel foundations</h2>
+                      <p className="mt-4 max-w-2xl text-sm leading-7 text-white/58">
+                        Follow the path: learn a family, review it, add words, then unlock native listening.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setView("learn");
+                        chooseMode("fidel");
+                      }}
+                      className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-black text-black transition hover:bg-white/90"
+                    >
+                      <Zap size={17} />
+                      Start next lesson
+                    </button>
+                  </div>
+                </div>
+
+                <div className="relative mx-auto grid max-w-2xl gap-6 px-5 py-8 md:px-8 md:py-10">
+                  <div className="absolute left-1/2 top-10 hidden h-[calc(100%-5rem)] w-1 -translate-x-1/2 rounded-full bg-black/8 md:block" />
+                  {[
+                    { title: "ሀ Family", copy: "Seven core forms", state: "done", icon: "ሀ", side: "left" },
+                    { title: "Review sounds", copy: "Listen and match", state: "active", icon: "headphones", side: "right" },
+                    { title: "ለ Family", copy: "Build the second set", state: "open", icon: "ለ", side: "left" },
+                    { title: "First words", copy: "ሰላም, ውሃ, ቤት", state: "open", icon: "ሰ", side: "right" },
+                    { title: "Native listening", copy: "ALFFA transcript match", state: "open", icon: "play", side: "left" },
+                    { title: "በ Family", copy: "Unlock after practice", state: "locked", icon: "በ", side: "right" },
+                  ].map((node, index) => (
+                    <div
+                      key={node.title}
+                      className={[
+                        "relative z-10 grid items-center gap-4 md:grid-cols-[1fr_86px_1fr]",
+                        node.side === "right" ? "" : "",
+                      ].join(" ")}
+                    >
+                      <div className={["hidden md:block", node.side === "left" ? "order-1" : "order-3"].join(" ")}>
+                        <PathLabel title={node.title} copy={node.copy} state={node.state} align={node.side === "left" ? "right" : "left"} />
+                      </div>
+                      <button
+                        onClick={() => {
+                          if (node.state === "locked") return;
+                          setView("learn");
+                          if (node.title.includes("word") || node.title.includes("words")) chooseMode("words");
+                          else if (node.title.includes("listening")) chooseMode("listening");
+                          else chooseMode("fidel");
+                        }}
+                        className={[
+                          "order-2 mx-auto grid size-20 place-items-center rounded-full border-4 text-center font-black shadow-xl transition md:size-24",
+                          node.state === "done" ? "border-black bg-black text-white shadow-black/20" : "",
+                          node.state === "active" ? "border-[#58cc02] bg-[#58cc02] text-white shadow-[#58cc02]/25 hover:-translate-y-1" : "",
+                          node.state === "open" ? "border-black/10 bg-white text-black hover:-translate-y-1 hover:border-black" : "",
+                          node.state === "locked" ? "cursor-not-allowed border-black/10 bg-black/5 text-black/25 shadow-none" : "",
+                        ].join(" ")}
+                        aria-label={node.title}
+                      >
+                        <span className="font-[var(--ethiopic)] text-3xl md:text-4xl">{renderPathIcon(node.icon, node.state)}</span>
+                      </button>
+                      <div className={["md:hidden", node.side === "left" ? "order-3" : "order-3"].join(" ")}>
+                        <PathLabel title={node.title} copy={node.copy} state={node.state} align="center" />
+                      </div>
+                      <div className={["hidden md:block", node.side === "left" ? "order-3" : "order-1"].join(" ")}>
+                        {index === 1 && (
+                          <div className="rounded-3xl border border-[#58cc02]/30 bg-[#58cc02]/10 p-4">
+                            <p className="text-xs font-black uppercase tracking-[0.2em] text-[#3b8f00]">Current</p>
+                            <p className="mt-1 text-sm font-bold text-black/60">This is where the next session starts.</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <aside className="grid content-start gap-4">
+                <div className="rounded-[2rem] border border-black/10 bg-black p-6 text-white">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.25em] text-white/40">Today</p>
+                      <h3 className="mt-2 text-3xl font-black">{progressState.xp} XP</h3>
+                    </div>
+                    <div className="grid size-16 place-items-center rounded-2xl bg-[#58cc02] text-white">
+                      <Trophy size={30} />
+                    </div>
+                  </div>
+                  <div className="mt-6 grid grid-cols-3 gap-2">
+                    <MiniStat label="Streak" value={progressState.streak} />
+                    <MiniStat label="Correct" value={progressState.correctAnswers} />
+                    <MiniStat label="Listens" value={progressState.nativeListens} />
+                  </div>
+                </div>
+
+                <div className="rounded-[2rem] border border-black/10 bg-[#f7f7f4] p-6">
+                  <p className="text-xs font-black uppercase tracking-[0.25em] text-black/35">Next chest</p>
+                  <div className="mt-4 flex items-center gap-4">
+                    <div className="grid size-16 place-items-center rounded-2xl border-2 border-black bg-white">
+                      <Star size={30} fill="currentColor" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-black">25 XP reward</h3>
+                      <p className="mt-1 text-sm font-bold text-black/50">Finish two more nodes to unlock it.</p>
+                    </div>
+                  </div>
+                  <div className="mt-5 h-3 overflow-hidden rounded-full bg-black/10">
+                    <div className="h-full w-2/3 rounded-full bg-[#58cc02]" />
+                  </div>
+                </div>
+
+                <button onClick={resetProgress} className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-black/10 bg-white px-5 text-sm font-black text-black/65 transition hover:border-black hover:text-black">
                   <RotateCcw size={17} />
                   Reset local progress
                 </button>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                {[
-                  ["Done", "Interactive fidel, word, and listening modes are working."],
-                  ["Audio v1", "ALFFA v2 clips load from Hugging Face for native sentence listening."],
-                  ["Next", "Mine short word clips from ALFFA transcripts and label exact time ranges."],
-                  ["Needed", "Record native speaker syllables for every fidel order."],
-                  ["Course", "Add units, spaced review timing, and placement tests."],
-                  ["Account", "Sync progress after the local loop feels complete."],
-                ].map(([title, copy]) => (
-                  <div key={title} className="rounded-3xl border border-white/10 bg-white/5 p-6">
-                    <strong className="text-xl">{title}</strong>
-                    <p className="mt-3 text-sm leading-6 text-white/55">{copy}</p>
-                  </div>
-                ))}
-              </div>
+              </aside>
             </div>
           </section>
         )}
@@ -878,6 +972,51 @@ function QualityRow({ label, value }: { label: string; value: string }) {
     <div className="flex items-center justify-between gap-3 rounded-2xl border border-black/10 bg-[#fafafa] p-3">
       <span className="text-sm font-black">{label}</span>
       <span className="text-right text-xs font-bold text-black/45">{value}</span>
+    </div>
+  );
+}
+
+function renderPathIcon(icon: string, state: string) {
+  if (state === "done") return <Check size={34} />;
+  if (state === "locked") return <Lock size={28} />;
+  if (icon === "headphones") return <Headphones size={34} />;
+  if (icon === "play") return <Play size={34} fill="currentColor" />;
+  return icon;
+}
+
+function PathLabel({
+  align,
+  copy,
+  state,
+  title,
+}: {
+  align: "left" | "right" | "center";
+  copy: string;
+  state: string;
+  title: string;
+}) {
+  return (
+    <div
+      className={[
+        "rounded-3xl border border-black/10 bg-white p-4 shadow-sm",
+        align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left",
+      ].join(" ")}
+    >
+      <div className="flex items-center justify-between gap-3">
+        {align === "right" && <span className="text-xs font-black uppercase tracking-[0.18em] text-black/35">{state}</span>}
+        <h3 className="font-[var(--ethiopic)] text-lg font-black">{title}</h3>
+        {align !== "right" && <span className="text-xs font-black uppercase tracking-[0.18em] text-black/35">{state}</span>}
+      </div>
+      <p className="mt-2 text-sm font-bold leading-6 text-black/50">{copy}</p>
+    </div>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/8 p-3 text-center">
+      <strong className="block text-xl">{value}</strong>
+      <span className="text-xs font-bold text-white/45">{label}</span>
     </div>
   );
 }
