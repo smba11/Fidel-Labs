@@ -19,6 +19,10 @@ import {
   Waves,
   Zap,
 } from "lucide-react";
+import { onAuthStateChanged, signInWithPopup, signOut, type User as FirebaseUser } from "firebase/auth";
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+
+import { auth, db, firebaseReady, googleProvider } from "./lib/firebase";
 
 type AnswerState = "idle" | "correct" | "wrong";
 type LessonState = "active" | "available" | "locked";
@@ -65,9 +69,17 @@ type Progress = {
   correctAnswers: number;
   nativeListens: number;
 };
+type AppUser = {
+  uid: string;
+  name: string;
+  email: string;
+  photoURL?: string;
+  demo: boolean;
+};
 type View = "learn" | "library" | "roadmap";
 
 const progressKey = "fidel-labs-progress-v2";
+const demoUserKey = "fidel-labs-demo-user";
 
 const lessons: Lesson[] = [
   {
@@ -300,6 +312,26 @@ function getInitialProgress(): Progress {
   }
 }
 
+function getInitialDemoUser(): AppUser | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const saved = window.localStorage.getItem(demoUserKey);
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
+}
+
+function toAppUser(user: FirebaseUser): AppUser {
+  return {
+    uid: user.uid,
+    name: user.displayName || "Fidel learner",
+    email: user.email || "",
+    photoURL: user.photoURL || undefined,
+    demo: false,
+  };
+}
+
 const defaultProgress: Progress = {
   xp: 180,
   streak: 4,
@@ -311,6 +343,9 @@ const defaultProgress: Progress = {
 
 export function App() {
   const [view, setView] = useState<View>("learn");
+  const [user, setUser] = useState<AppUser | null>(getInitialDemoUser);
+  const [authLoading, setAuthLoading] = useState(firebaseReady);
+  const [authError, setAuthError] = useState("");
   const [practiceMode, setPracticeMode] = useState<PracticeMode>("fidel");
   const [activeLessonId, setActiveLessonId] = useState("ha");
   const [exerciseIndex, setExerciseIndex] = useState(0);
@@ -322,6 +357,7 @@ export function App() {
   const [nativeStatus, setNativeStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [libraryQuery, setLibraryQuery] = useState("");
   const advanceTimer = useRef<number | null>(null);
+  const cloudReady = useRef(!firebaseReady);
 
   const activeLesson = lessons.find((lesson) => lesson.id === activeLessonId) ?? lessons[0];
   const allItems = lessons.flatMap((lesson) => lesson.items.map((item) => ({ ...item, family: lesson.shortTitle })));
@@ -355,7 +391,73 @@ export function App() {
 
   useEffect(() => {
     window.localStorage.setItem(progressKey, JSON.stringify(progressState));
-  }, [progressState]);
+    if (user && !user.demo && db && cloudReady.current) {
+      void setDoc(
+        doc(db, "users", user.uid),
+        {
+          profile: {
+            name: user.name,
+            email: user.email,
+            photoURL: user.photoURL ?? null,
+          },
+          progress: progressState,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+    }
+  }, [progressState, user]);
+
+  useEffect(() => {
+    const firebaseAuth = auth;
+    const firestore = db;
+    if (!firebaseReady || !firebaseAuth || !firestore) {
+      setAuthLoading(false);
+      cloudReady.current = true;
+      return;
+    }
+
+    return onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
+      setAuthError("");
+      if (!firebaseUser) {
+        setUser(getInitialDemoUser());
+        setAuthLoading(false);
+        cloudReady.current = true;
+        return;
+      }
+
+      const nextUser = toAppUser(firebaseUser);
+      setUser(nextUser);
+      window.localStorage.removeItem(demoUserKey);
+      try {
+        const progressRef = doc(firestore, "users", nextUser.uid);
+        const snapshot = await getDoc(progressRef);
+        if (snapshot.exists() && snapshot.data().progress) {
+          setProgressState({ ...defaultProgress, ...snapshot.data().progress });
+        } else {
+          await setDoc(
+            progressRef,
+            {
+              profile: {
+                name: nextUser.name,
+                email: nextUser.email,
+                photoURL: nextUser.photoURL ?? null,
+              },
+              progress: progressState,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+        }
+      } catch {
+        setAuthError("Signed in, but cloud progress could not sync yet.");
+      } finally {
+        cloudReady.current = true;
+        setAuthLoading(false);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -479,6 +581,56 @@ export function App() {
     resetExercise();
   }
 
+  async function signInWithGoogle() {
+    setAuthError("");
+    if (!firebaseReady || !auth) {
+      const demoUser: AppUser = {
+        uid: "demo-google-user",
+        name: "Google demo learner",
+        email: "demo@fidellabs.local",
+        demo: true,
+      };
+      window.localStorage.setItem(demoUserKey, JSON.stringify(demoUser));
+      setUser(demoUser);
+      return;
+    }
+
+    try {
+      setAuthLoading(true);
+      await signInWithPopup(auth, googleProvider);
+    } catch {
+      setAuthError("Google sign-in did not complete. Try again or check your Firebase settings.");
+      setAuthLoading(false);
+    }
+  }
+
+  async function signOutUser() {
+    clearAdvance();
+    window.localStorage.removeItem(demoUserKey);
+    setUser(null);
+    if (auth && auth.currentUser) {
+      await signOut(auth);
+    }
+  }
+
+  if (authLoading) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-[#f7f7f4] p-6 text-black">
+        <div className="rounded-[2rem] border border-black/10 bg-white p-8 text-center shadow-2xl shadow-black/10">
+          <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-black text-white">
+            <Waves size={28} />
+          </div>
+          <h1 className="mt-5 text-3xl font-black">Loading Fidel Labs</h1>
+          <p className="mt-2 text-sm font-bold text-black/45">Checking your saved progress.</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!user) {
+    return <SignInScreen authError={authError} firebaseReady={firebaseReady} onSignIn={signInWithGoogle} />;
+  }
+
   return (
     <main className="min-h-screen bg-[#f7f7f4] text-black">
       <div className="mx-auto grid min-h-screen w-full max-w-[1540px] gap-5 px-4 py-4 md:grid-cols-[108px_minmax(0,1fr)] md:gap-7 md:px-7 md:py-7 xl:grid-cols-[124px_minmax(0,1fr)] xl:gap-9 xl:px-9">
@@ -502,6 +654,25 @@ export function App() {
                 <p className="mt-6 max-w-xl text-lg leading-8 text-white/62">
                   Practice the script, learn useful words, then listen to authentic ALFFA Amharic clips.
                 </p>
+                <div className="mt-6 flex items-center justify-between gap-4 rounded-3xl border border-white/10 bg-white/6 p-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    {user.photoURL ? (
+                      <img src={user.photoURL} alt="" className="size-11 rounded-2xl object-cover" />
+                    ) : (
+                      <div className="grid size-11 place-items-center rounded-2xl bg-white text-sm font-black text-black">
+                        {user.name.slice(0, 1).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-black">{user.name}</p>
+                      <p className="truncate text-xs font-bold text-white/45">{user.demo ? "Demo Google mode" : "Cloud sync on"}</p>
+                    </div>
+                  </div>
+                  <button onClick={signOutUser} className="rounded-2xl border border-white/10 px-3 py-2 text-xs font-black text-white/60 transition hover:bg-white/10 hover:text-white">
+                    Sign out
+                  </button>
+                </div>
+                {authError && <p className="mt-3 text-sm font-bold text-white/65">{authError}</p>}
                 <div className="mt-8 grid grid-cols-3 gap-3 lg:grid-cols-1 xl:grid-cols-3">
                   <Metric icon={<Flame size={19} />} label="day streak" value={progressState.streak} dark />
                   <Metric icon={<GraduationCap size={19} />} label="XP earned" value={progressState.xp} dark />
@@ -881,6 +1052,74 @@ function playTone(frequency: number, duration: number) {
   } catch {
     // Audio is best-effort in browser previews.
   }
+}
+
+function SignInScreen({
+  authError,
+  firebaseReady,
+  onSignIn,
+}: {
+  authError: string;
+  firebaseReady: boolean;
+  onSignIn: () => void;
+}) {
+  return (
+    <main className="min-h-screen bg-[#f7f7f4] p-4 text-black md:p-8">
+      <section className="mx-auto grid min-h-[calc(100vh-2rem)] w-full max-w-6xl overflow-hidden rounded-[2rem] border border-black/10 bg-white shadow-2xl shadow-black/10 md:min-h-[calc(100vh-4rem)] md:grid-cols-[1.05fr_0.95fr]">
+        <div className="relative bg-black p-7 text-white md:p-10 xl:p-12">
+          <div className="absolute inset-x-8 bottom-8 top-44 rounded-[2rem] border border-white/10 bg-white/6" />
+          <div className="relative z-10">
+            <p className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-white/50">
+              <Waves size={14} />
+              Fidel Labs
+            </p>
+            <h1 className="mt-8 max-w-xl text-5xl font-black leading-[0.92] tracking-tight md:text-7xl">
+              Save your Amharic progress.
+            </h1>
+            <p className="mt-6 max-w-lg text-lg leading-8 text-white/62">
+              Sign in with Google to keep XP, streaks, lesson progress, reviews, and listening practice connected to your account.
+            </p>
+          </div>
+          <div className="relative z-10 mt-10 grid gap-3 sm:grid-cols-3">
+            <Metric icon={<Flame size={19} />} label="streak ready" value="4" dark />
+            <Metric icon={<GraduationCap size={19} />} label="cloud XP" value="sync" dark />
+            <Metric icon={<Headphones size={19} />} label="ALFFA audio" value="live" dark />
+          </div>
+        </div>
+
+        <div className="grid content-center p-7 md:p-10 xl:p-12">
+          <div className="mx-auto w-full max-w-md">
+            <div className="grid size-16 place-items-center rounded-2xl bg-black text-white">
+              <Waves size={30} />
+            </div>
+            <h2 className="mt-8 text-4xl font-black tracking-tight">Welcome back</h2>
+            <p className="mt-3 text-sm font-bold leading-6 text-black/55">
+              Pick up your fidel path, XP, streak, review deck, and listening practice from wherever you last studied.
+            </p>
+
+            <button
+              onClick={onSignIn}
+              className="mt-8 flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl border border-black/10 bg-white px-5 text-sm font-black shadow-lg shadow-black/5 transition hover:-translate-y-0.5 hover:border-black"
+            >
+              <span className="grid size-7 place-items-center rounded-full border border-black/10 text-base font-black">G</span>
+              Continue with Google
+            </button>
+
+            {!firebaseReady && (
+              <div className="mt-5 rounded-2xl border border-black/10 bg-[#f7f7f4] p-4">
+                <p className="text-sm font-black">Demo mode active</p>
+                <p className="mt-1 text-xs font-bold leading-5 text-black/50">
+                  This preview saves progress on this device until the cloud sign-in keys are connected.
+                </p>
+              </div>
+            )}
+
+            {authError && <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">{authError}</p>}
+          </div>
+        </div>
+      </section>
+    </main>
+  );
 }
 
 function NavButton({
