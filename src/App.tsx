@@ -640,6 +640,32 @@ export function App() {
           <NavButton active={view === "roadmap"} icon={<Map size={20} />} label="Plan" onClick={() => setView("roadmap")} />
         </nav>
 
+        <div className="min-w-0">
+          <header className="mb-5 flex flex-col gap-3 rounded-[1.5rem] border border-black/10 bg-white/88 p-3 shadow-xl shadow-black/5 backdrop-blur md:flex-row md:items-center md:justify-between md:p-4">
+            <div className="flex items-center gap-3">
+              <img src="/favicon.svg" alt="" className="size-11 rounded-2xl border border-black/10" />
+              <div>
+                <p className="text-sm font-black">Fidel Labs</p>
+                <p className="text-xs font-bold text-black/45">Amharic practice in guest mode or with cloud progress</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-3 md:justify-end">
+              <div className="min-w-0 text-left md:text-right">
+                <p className="truncate text-sm font-black">{user ? user.name : "Learning as guest"}</p>
+                <p className="truncate text-xs font-bold text-black/45">
+                  {user ? (user.demo ? "Demo account" : "Cloud sync on") : "Progress saves on this device"}
+                </p>
+              </div>
+              <button
+                onClick={user ? signOutUser : () => setShowAuthPanel(true)}
+                className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-2xl bg-black px-4 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-black/85"
+              >
+                {user ? "Sign out" : "Sign in"}
+              </button>
+            </div>
+          </header>
+          {authError && <p className="mb-4 rounded-2xl border border-black/10 bg-white p-3 text-sm font-bold text-black/60">{authError}</p>}
+
         {view === "learn" && (
           <section className="grid gap-5 pb-24 md:pb-0">
             <div className="grid gap-5 lg:grid-cols-[380px_minmax(0,1fr)] lg:items-start xl:grid-cols-[430px_minmax(0,1fr)] xl:gap-8">
@@ -654,38 +680,6 @@ export function App() {
                 <p className="mt-6 max-w-xl text-lg leading-8 text-white/62">
                   Practice the script, learn useful words, then listen to authentic ALFFA Amharic clips.
                 </p>
-                <div className="mt-6 flex items-center justify-between gap-4 rounded-3xl border border-white/10 bg-white/6 p-3">
-                  {user ? (
-                    <div className="flex min-w-0 items-center gap-3">
-                      {user.photoURL ? (
-                        <img src={user.photoURL} alt="" className="size-11 rounded-2xl object-cover" />
-                      ) : (
-                        <div className="grid size-11 place-items-center rounded-2xl bg-white text-sm font-black text-black">
-                          {user.name.slice(0, 1).toUpperCase()}
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-black">{user.name}</p>
-                        <p className="truncate text-xs font-bold text-white/45">{user.demo ? "Demo Google mode" : "Cloud sync on"}</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div className="grid size-11 place-items-center rounded-2xl bg-white text-sm font-black text-black">G</div>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-black">Learning as guest</p>
-                        <p className="truncate text-xs font-bold text-white/45">Progress saves on this device</p>
-                      </div>
-                    </div>
-                  )}
-                  <button
-                    onClick={user ? signOutUser : () => setShowAuthPanel(true)}
-                    className="rounded-2xl border border-white/10 px-3 py-2 text-xs font-black text-white/70 transition hover:bg-white/10 hover:text-white"
-                  >
-                    {user ? "Sign out" : "Sign up"}
-                  </button>
-                </div>
-                {authError && <p className="mt-3 text-sm font-bold text-white/65">{authError}</p>}
                 <div className="mt-8 grid grid-cols-3 gap-3 lg:grid-cols-1 xl:grid-cols-3">
                   <Metric icon={<Flame size={19} />} label="day streak" value={progressState.streak} dark />
                   <Metric icon={<GraduationCap size={19} />} label="XP earned" value={progressState.xp} dark />
@@ -1019,15 +1013,20 @@ export function App() {
             </div>
           </section>
         )}
+        </div>
       </div>
       {showAuthPanel && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/55 p-4 backdrop-blur-sm md:p-8">
-          <div className="mx-auto max-w-md">
+        <div
+          className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm md:p-8"
+          onClick={() => setShowAuthPanel(false)}
+        >
+          <div className="w-full max-w-md" onClick={(event) => event.stopPropagation()}>
             <SignInScreen
               authError={authError}
               firebaseReady={firebaseReady}
               onSignIn={signInWithGoogle}
               onSkip={() => setShowAuthPanel(false)}
+              onClose={() => setShowAuthPanel(false)}
             />
           </div>
         </div>
@@ -1084,11 +1083,13 @@ function SignInScreen({
   firebaseReady,
   onSignIn,
   onSkip,
+  onClose,
 }: {
   authError: string;
   firebaseReady: boolean;
   onSignIn: () => void;
   onSkip: () => void;
+  onClose: () => void;
 }) {
   const helperText = firebaseReady
     ? "Your Fidel Labs progress will sync to your Google account."
@@ -1103,9 +1104,9 @@ function SignInScreen({
         alt: "Fidel Labs logo",
         title: "Fidel Labs",
       }}
-      signupText="Create account"
+      signupText="Save progress with Google"
       googleText="Continue with Google"
-      loginText="Already learning?"
+      loginText=""
       loginUrl="#"
       supportingText="Save your Amharic fidel path, XP, streak, reviews, and listening practice."
       helperText={helperText}
@@ -1113,6 +1114,7 @@ function SignInScreen({
       onGoogleSignIn={onSignIn}
       skipText="Keep learning as guest"
       onSkip={onSkip}
+      onClose={onClose}
     />
   );
 }

@@ -1,4 +1,5 @@
 import { FcGoogle } from "react-icons/fc";
+import { X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ interface Signup1Props {
   onGoogleSignIn?: () => void;
   skipText?: string;
   onSkip?: () => void;
+  onClose?: () => void;
 }
 
 const Signup1 = ({
@@ -41,11 +43,22 @@ const Signup1 = ({
   onGoogleSignIn,
   skipText = "Continue without an account",
   onSkip,
+  onClose,
 }: Signup1Props) => {
   return (
-    <section className="min-h-screen bg-[#f7f7f4] text-foreground">
-      <div className="flex h-full items-center justify-center px-4">
-        <div className="flex w-full max-w-sm flex-col items-center gap-7 rounded-3xl border border-black/10 bg-background px-6 py-10 shadow-2xl shadow-black/10">
+    <section className="grid min-h-screen place-items-center bg-transparent text-foreground">
+      <div className="flex w-full items-center justify-center px-4">
+        <div className="relative flex w-full max-w-sm flex-col items-center gap-7 rounded-[1.75rem] border border-black/10 bg-background px-6 py-10 shadow-2xl shadow-black/20">
+          {onClose && (
+            <button
+              type="button"
+              aria-label="Close sign up"
+              onClick={onClose}
+              className="absolute right-4 top-4 grid size-9 place-items-center rounded-full border border-black/10 bg-white text-black/55 transition hover:border-black hover:text-black"
+            >
+              <X size={17} />
+            </button>
+          )}
           <div className="flex flex-col items-center gap-2 text-center">
             <div className="flex items-center gap-1 lg:justify-start">
               <a href={logo.url} aria-label={logo.title ?? logo.alt}>
@@ -63,8 +76,8 @@ const Signup1 = ({
               <div className="flex flex-col gap-2">
                 <Input type="password" placeholder="Password" required />
               </div>
-              <div className="flex flex-col gap-4">
-                <Button type="submit" className="mt-2 w-full">
+              <div className="flex flex-col gap-3">
+                <Button type="button" className="mt-2 w-full" onClick={onGoogleSignIn}>
                   {signupText}
                 </Button>
                 <Button type="button" variant="outline" className="w-full" onClick={onGoogleSignIn}>
@@ -81,12 +94,14 @@ const Signup1 = ({
           </form>
           {helperText && <p className="text-center text-xs leading-5 text-muted-foreground">{helperText}</p>}
           {errorText && <p className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-center text-sm font-medium text-destructive">{errorText}</p>}
-          <div className="flex justify-center gap-1 text-sm text-muted-foreground">
-            <p>{loginText}</p>
-            <a href={loginUrl} className="font-medium text-primary hover:underline">
-              Login
-            </a>
-          </div>
+          {loginText && (
+            <div className="flex justify-center gap-1 text-sm text-muted-foreground">
+              <p>{loginText}</p>
+              <a href={loginUrl} className="font-medium text-primary hover:underline">
+                Login
+              </a>
+            </div>
+          )}
         </div>
       </div>
     </section>
