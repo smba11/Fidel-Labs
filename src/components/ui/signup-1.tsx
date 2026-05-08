@@ -19,6 +19,8 @@ interface Signup1Props {
   errorText?: string;
   helperText?: string;
   onGoogleSignIn?: () => void;
+  skipText?: string;
+  onSkip?: () => void;
 }
 
 const Signup1 = ({
@@ -37,19 +39,21 @@ const Signup1 = ({
   errorText,
   helperText,
   onGoogleSignIn,
+  skipText = "Continue without an account",
+  onSkip,
 }: Signup1Props) => {
   return (
-    <section className="h-screen bg-muted">
+    <section className="min-h-screen bg-[#f7f7f4] text-foreground">
       <div className="flex h-full items-center justify-center px-4">
-        <div className="flex w-full max-w-sm flex-col items-center gap-8 rounded-md border border-muted bg-background px-6 py-12 shadow-md">
+        <div className="flex w-full max-w-sm flex-col items-center gap-7 rounded-3xl border border-black/10 bg-background px-6 py-10 shadow-2xl shadow-black/10">
           <div className="flex flex-col items-center gap-2 text-center">
             <div className="flex items-center gap-1 lg:justify-start">
               <a href={logo.url} aria-label={logo.title ?? logo.alt}>
-                <img src={logo.src} alt={logo.alt} title={logo.title} className="h-10 dark:invert" />
+                <img src={logo.src} alt={logo.alt} title={logo.title} className="h-12 rounded-2xl" />
               </a>
             </div>
-            {heading && <h1 className="text-3xl font-semibold">{heading}</h1>}
-            {supportingText && <p className="text-sm leading-6 text-muted-foreground">{supportingText}</p>}
+            {heading && <h1 className="text-3xl font-black tracking-tight">{heading}</h1>}
+            {supportingText && <p className="text-sm font-medium leading-6 text-muted-foreground">{supportingText}</p>}
           </div>
           <form className="flex w-full flex-col gap-8" onSubmit={(event) => event.preventDefault()}>
             <div className="flex flex-col gap-4">
@@ -67,6 +71,11 @@ const Signup1 = ({
                   <FcGoogle className="mr-2 size-5" />
                   {googleText}
                 </Button>
+                {onSkip && (
+                  <Button type="button" variant="ghost" className="w-full" onClick={onSkip}>
+                    {skipText}
+                  </Button>
+                )}
               </div>
             </div>
           </form>

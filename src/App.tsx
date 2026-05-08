@@ -345,8 +345,9 @@ const defaultProgress: Progress = {
 export function App() {
   const [view, setView] = useState<View>("learn");
   const [user, setUser] = useState<AppUser | null>(getInitialDemoUser);
-  const [authLoading, setAuthLoading] = useState(firebaseReady);
+  const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [showAuthPanel, setShowAuthPanel] = useState(false);
   const [practiceMode, setPracticeMode] = useState<PracticeMode>("fidel");
   const [activeLessonId, setActiveLessonId] = useState("ha");
   const [exerciseIndex, setExerciseIndex] = useState(0);
@@ -593,12 +594,14 @@ export function App() {
       };
       window.localStorage.setItem(demoUserKey, JSON.stringify(demoUser));
       setUser(demoUser);
+      setShowAuthPanel(false);
       return;
     }
 
     try {
       setAuthLoading(true);
       await signInWithPopup(auth, googleProvider);
+      setShowAuthPanel(false);
     } catch {
       setAuthError("Google sign-in did not complete. Try again or check your Firebase settings.");
       setAuthLoading(false);
@@ -628,10 +631,6 @@ export function App() {
     );
   }
 
-  if (!user) {
-    return <SignInScreen authError={authError} firebaseReady={firebaseReady} onSignIn={signInWithGoogle} />;
-  }
-
   return (
     <main className="min-h-screen bg-[#f7f7f4] text-black">
       <div className="mx-auto grid min-h-screen w-full max-w-[1540px] gap-5 px-4 py-4 md:grid-cols-[108px_minmax(0,1fr)] md:gap-7 md:px-7 md:py-7 xl:grid-cols-[124px_minmax(0,1fr)] xl:gap-9 xl:px-9">
@@ -656,21 +655,34 @@ export function App() {
                   Practice the script, learn useful words, then listen to authentic ALFFA Amharic clips.
                 </p>
                 <div className="mt-6 flex items-center justify-between gap-4 rounded-3xl border border-white/10 bg-white/6 p-3">
-                  <div className="flex min-w-0 items-center gap-3">
-                    {user.photoURL ? (
-                      <img src={user.photoURL} alt="" className="size-11 rounded-2xl object-cover" />
-                    ) : (
-                      <div className="grid size-11 place-items-center rounded-2xl bg-white text-sm font-black text-black">
-                        {user.name.slice(0, 1).toUpperCase()}
+                  {user ? (
+                    <div className="flex min-w-0 items-center gap-3">
+                      {user.photoURL ? (
+                        <img src={user.photoURL} alt="" className="size-11 rounded-2xl object-cover" />
+                      ) : (
+                        <div className="grid size-11 place-items-center rounded-2xl bg-white text-sm font-black text-black">
+                          {user.name.slice(0, 1).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-black">{user.name}</p>
+                        <p className="truncate text-xs font-bold text-white/45">{user.demo ? "Demo Google mode" : "Cloud sync on"}</p>
                       </div>
-                    )}
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-black">{user.name}</p>
-                      <p className="truncate text-xs font-bold text-white/45">{user.demo ? "Demo Google mode" : "Cloud sync on"}</p>
                     </div>
-                  </div>
-                  <button onClick={signOutUser} className="rounded-2xl border border-white/10 px-3 py-2 text-xs font-black text-white/60 transition hover:bg-white/10 hover:text-white">
-                    Sign out
+                  ) : (
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="grid size-11 place-items-center rounded-2xl bg-white text-sm font-black text-black">G</div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-black">Learning as guest</p>
+                        <p className="truncate text-xs font-bold text-white/45">Progress saves on this device</p>
+                      </div>
+                    </div>
+                  )}
+                  <button
+                    onClick={user ? signOutUser : () => setShowAuthPanel(true)}
+                    className="rounded-2xl border border-white/10 px-3 py-2 text-xs font-black text-white/70 transition hover:bg-white/10 hover:text-white"
+                  >
+                    {user ? "Sign out" : "Sign up"}
                   </button>
                 </div>
                 {authError && <p className="mt-3 text-sm font-bold text-white/65">{authError}</p>}
@@ -1008,6 +1020,18 @@ export function App() {
           </section>
         )}
       </div>
+      {showAuthPanel && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/55 p-4 backdrop-blur-sm md:p-8">
+          <div className="mx-auto max-w-md">
+            <SignInScreen
+              authError={authError}
+              firebaseReady={firebaseReady}
+              onSignIn={signInWithGoogle}
+              onSkip={() => setShowAuthPanel(false)}
+            />
+          </div>
+        </div>
+      )}
     </main>
   );
 }
@@ -1059,10 +1083,12 @@ function SignInScreen({
   authError,
   firebaseReady,
   onSignIn,
+  onSkip,
 }: {
   authError: string;
   firebaseReady: boolean;
   onSignIn: () => void;
+  onSkip: () => void;
 }) {
   const helperText = firebaseReady
     ? "Your Fidel Labs progress will sync to your Google account."
@@ -1085,6 +1111,8 @@ function SignInScreen({
       helperText={helperText}
       errorText={authError}
       onGoogleSignIn={onSignIn}
+      skipText="Keep learning as guest"
+      onSkip={onSkip}
     />
   );
 }
