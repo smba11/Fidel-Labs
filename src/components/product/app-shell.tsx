@@ -25,9 +25,9 @@ export function AppShell({
 }) {
   return (
     <main className="min-h-screen bg-[#f7f7f4] text-black">
-      <div className="mx-auto grid min-h-screen w-full max-w-[1560px] gap-5 px-4 py-4 md:grid-cols-[116px_minmax(0,1fr)] md:px-7 md:py-7 xl:grid-cols-[132px_minmax(0,1fr)] xl:gap-8">
-        <aside className="fixed bottom-4 left-4 right-4 z-40 rounded-[1.5rem] border border-black/10 bg-white/92 p-2 shadow-2xl shadow-black/10 backdrop-blur md:sticky md:bottom-auto md:top-7 md:h-[calc(100vh-3.5rem)] md:p-3">
-          <nav aria-label="Primary navigation" className="grid grid-cols-5 gap-2 md:grid-cols-1 md:gap-3">
+      <div className="mx-auto grid min-h-screen w-full max-w-[1560px] gap-5 px-4 py-4 md:grid-cols-[88px_minmax(0,1fr)] md:px-7 md:py-7 xl:gap-8">
+        <aside className="fixed bottom-4 left-4 right-4 z-40 rounded-[1.5rem] border border-black/10 bg-white/92 p-2 shadow-2xl shadow-black/10 backdrop-blur md:sticky md:bottom-auto md:top-7 md:self-start md:rounded-[2rem] md:p-2">
+          <nav aria-label="Primary navigation" className="grid grid-cols-5 gap-2 md:grid-cols-1 md:gap-2">
             {navItems.map((item) => (
               <button
                 key={item.id}
@@ -35,12 +35,13 @@ export function AppShell({
                 onClick={() => onRoute(item.id)}
                 aria-current={route === item.id ? "page" : undefined}
                 className={[
-                  "grid min-h-16 place-items-center rounded-2xl text-xs font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black md:gap-1",
+                  "grid min-h-16 place-items-center rounded-2xl text-xs font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black md:size-16 md:min-h-0 md:gap-1",
                   route === item.id ? "bg-black text-white" : "text-black/55 hover:bg-black/5 hover:text-black",
                 ].join(" ")}
+                title={item.label}
               >
                 {item.icon}
-                <span>{item.label}</span>
+                <span className="md:text-[10px]">{item.label}</span>
               </button>
             ))}
           </nav>
@@ -48,13 +49,13 @@ export function AppShell({
             type="button"
             onClick={onAuth}
             aria-label={user ? "Sign out" : "Sign in"}
-            className="mt-3 hidden w-full rounded-2xl border border-black/10 p-3 text-left transition hover:border-black md:block"
+            title={user ? "Sign out" : "Sign in"}
+            className="mt-2 hidden size-16 place-items-center rounded-2xl border border-black/10 transition hover:border-black hover:bg-black/5 md:grid"
           >
             <div className="grid size-10 place-items-center rounded-xl bg-black text-white">
               <UserRound size={18} />
             </div>
-            <p className="mt-3 truncate text-xs font-black">{user ? user.name : "Guest learner"}</p>
-            <p className="mt-1 text-[11px] font-bold text-black/45">{user ? "Account ready" : "Sign in anytime"}</p>
+            <span className="sr-only">{user ? user.name : "Guest learner"}</span>
           </button>
         </aside>
 
