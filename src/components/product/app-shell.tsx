@@ -1,4 +1,4 @@
-import { BookOpen, Library, Map, MessageCircle, Sparkles, UserRound } from "lucide-react";
+import { BookOpen, Library, LogOut, Map, MessageCircle, Sparkles, UserRound } from "lucide-react";
 
 import type { AppUser, RouteId } from "@/types/learning";
 
@@ -25,8 +25,11 @@ export function AppShell({
 }) {
   return (
     <main className="min-h-screen bg-[#f7f7f4] text-black">
-      <div className="mx-auto grid min-h-screen w-full max-w-[1560px] gap-5 px-4 py-4 md:grid-cols-[88px_minmax(0,1fr)] md:px-7 md:py-7 xl:gap-8">
-        <aside className="fixed bottom-4 left-4 right-4 z-40 rounded-[1.5rem] border border-black/10 bg-white/92 p-2 shadow-2xl shadow-black/10 backdrop-blur md:sticky md:bottom-auto md:top-7 md:self-start md:rounded-[2rem] md:p-2">
+      <div className="mx-auto grid min-h-screen w-full max-w-[1560px] gap-5 px-4 py-4 md:grid-cols-[116px_minmax(0,1fr)] md:px-7 md:py-7 xl:gap-8">
+        <aside className="fixed bottom-4 left-4 right-4 z-40 rounded-[1.5rem] border border-black/10 bg-white/92 p-2 shadow-2xl shadow-black/10 backdrop-blur md:sticky md:bottom-auto md:top-7 md:flex md:h-[calc(100vh-3.5rem)] md:flex-col md:rounded-[2rem] md:p-3">
+          <div className="mb-4 hidden md:flex md:items-center md:justify-center">
+            <img src="/favicon.svg" alt="Fidel Labs" className="size-14 rounded-2xl border border-black/10" />
+          </div>
           <nav aria-label="Primary navigation" className="grid grid-cols-5 gap-2 md:grid-cols-1 md:gap-2">
             {navItems.map((item) => (
               <button
@@ -35,13 +38,13 @@ export function AppShell({
                 onClick={() => onRoute(item.id)}
                 aria-current={route === item.id ? "page" : undefined}
                 className={[
-                  "grid min-h-16 place-items-center rounded-2xl text-xs font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black md:size-16 md:min-h-0 md:gap-1",
+                  "grid min-h-16 place-items-center rounded-2xl text-xs font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black md:min-h-[74px] md:gap-1",
                   route === item.id ? "bg-black text-white" : "text-black/55 hover:bg-black/5 hover:text-black",
                 ].join(" ")}
                 title={item.label}
               >
                 {item.icon}
-                <span className="md:text-[10px]">{item.label}</span>
+                <span className="md:text-xs">{item.label}</span>
               </button>
             ))}
           </nav>
@@ -50,17 +53,31 @@ export function AppShell({
             onClick={onAuth}
             aria-label={user ? "Sign out" : "Sign in"}
             title={user ? "Sign out" : "Sign in"}
-            className="mt-2 hidden size-16 place-items-center rounded-2xl border border-black/10 transition hover:border-black hover:bg-black/5 md:grid"
+            className="mt-4 hidden rounded-2xl border border-black/10 p-3 text-left transition hover:border-black hover:bg-black/5 md:block"
           >
-            {user?.photoURL ? (
-              <img src={user.photoURL} alt="" className="size-10 rounded-xl object-cover" />
-            ) : (
-              <div className="grid size-10 place-items-center rounded-xl bg-black text-white">
-                {user ? user.name.slice(0, 1).toUpperCase() : <UserRound size={18} />}
-              </div>
-            )}
-            <span className="sr-only">{user ? user.name : "Guest learner"}</span>
+            <div className="mx-auto grid size-12 place-items-center overflow-hidden rounded-2xl bg-black text-white">
+              {user?.photoURL ? (
+                <img src={user.photoURL} alt="" className="size-full object-cover" />
+              ) : user ? (
+                user.name.slice(0, 1).toUpperCase()
+              ) : (
+                <UserRound size={19} />
+              )}
+            </div>
+            <p className="mt-3 truncate text-center text-xs font-black">{user ? "Account" : "Guest"}</p>
+            <p className="mt-1 text-center text-[11px] font-bold leading-4 text-black/45">{user ? "Cloud on" : "Sign in"}</p>
           </button>
+          <div className="mt-auto hidden border-t border-black/10 pt-3 md:block">
+            <button
+              type="button"
+              onClick={onAuth}
+              className="grid min-h-12 w-full place-items-center rounded-2xl text-black/45 transition hover:bg-black/5 hover:text-black"
+              aria-label={user ? "Sign out" : "Sign in"}
+              title={user ? "Sign out" : "Sign in"}
+            >
+              {user ? <LogOut size={18} /> : <UserRound size={18} />}
+            </button>
+          </div>
         </aside>
 
         <div className="min-w-0 pb-24 md:pb-0">{children}</div>
