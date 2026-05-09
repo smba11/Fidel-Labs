@@ -39,7 +39,7 @@ function toAppUser(user: FirebaseUser): AppUser {
 
 function authMessage(error: unknown) {
   const code = typeof error === "object" && error && "code" in error ? String((error as { code?: string }).code) : "";
-  if (code.includes("unauthorized-domain")) return "Firebase is blocking this domain. Add im-looking-to-start-working-on.vercel.app in Authentication settings.";
+  if (code.includes("unauthorized-domain")) return "Firebase is blocking this domain. Add fidel-labs.vercel.app in Authentication settings.";
   if (code.includes("operation-not-allowed")) return "Google sign-in is not enabled yet in Firebase Authentication.";
   if (code.includes("popup-blocked")) return "Popup was blocked, so we are switching to a redirect sign-in.";
   return "Google sign-in could not finish. Check Firebase Authentication, authorized domains, and Firestore setup.";
@@ -221,7 +221,13 @@ export function App() {
     ) : route === "progress" ? (
       <ProgressScreen progress={progress} onReset={resetProgress} />
     ) : (
-      <Dashboard progress={progress} onRoute={setRoute} onSelectFamily={setActiveFamilyId} onAuth={user ? signOutUser : () => setAuthOpen(true)} />
+      <Dashboard
+        progress={progress}
+        user={user}
+        onRoute={setRoute}
+        onSelectFamily={setActiveFamilyId}
+        onAuth={user ? signOutUser : () => setAuthOpen(true)}
+      />
     );
 
   return (

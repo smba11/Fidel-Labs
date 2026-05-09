@@ -52,9 +52,13 @@ export function AppShell({
             title={user ? "Sign out" : "Sign in"}
             className="mt-2 hidden size-16 place-items-center rounded-2xl border border-black/10 transition hover:border-black hover:bg-black/5 md:grid"
           >
-            <div className="grid size-10 place-items-center rounded-xl bg-black text-white">
-              <UserRound size={18} />
-            </div>
+            {user?.photoURL ? (
+              <img src={user.photoURL} alt="" className="size-10 rounded-xl object-cover" />
+            ) : (
+              <div className="grid size-10 place-items-center rounded-xl bg-black text-white">
+                {user ? user.name.slice(0, 1).toUpperCase() : <UserRound size={18} />}
+              </div>
+            )}
             <span className="sr-only">{user ? user.name : "Guest learner"}</span>
           </button>
         </aside>
