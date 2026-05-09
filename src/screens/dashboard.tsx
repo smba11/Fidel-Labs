@@ -37,7 +37,7 @@ export function Dashboard({
           </button>
         </div>
 
-        <div className="grid gap-4">
+        <div className="grid content-start gap-4">
           <ProgressStats progress={progress} totalFamilies={fidelFamilies.length} />
           <div className="grid gap-4 sm:grid-cols-2">
             <button onClick={() => onRoute("conversation")} className="rounded-[1.5rem] border border-black/10 bg-white p-5 text-left transition hover:-translate-y-0.5 hover:border-black">

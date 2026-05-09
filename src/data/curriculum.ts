@@ -18,7 +18,8 @@ function family(
   category: "core" | "expanded" = "core",
   difficulty: 1 | 2 | 3 = 1
 ): FidelFamily {
-  const vowels = ["e", "u", "i", "a", "e", "", "o"];
+  const firstOrder = transliteration === "h" ? `${transliteration}a` : `${transliteration}e`;
+  const sounds = [firstOrder, `${transliteration}u`, `${transliteration}i`, `${transliteration}a`, `${transliteration}e`, transliteration, `${transliteration}o`];
   return {
     id,
     name: `${base} family`,
@@ -29,8 +30,8 @@ function family(
     culturalNote: `The ${base} row helps learners spot ${transliteration}-sound patterns inside real Amharic words.`,
     orders: forms.map((fidel, index) => ({
       fidel,
-      transliteration: `${transliteration}${vowels[index]}`,
-      sound: `${transliteration}${vowels[index]}`,
+      transliteration: sounds[index],
+      sound: sounds[index],
       english: orderLabels[index][0],
       note: orderLabels[index][1],
     })),

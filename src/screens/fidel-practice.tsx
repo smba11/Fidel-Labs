@@ -1,6 +1,5 @@
 import { Check, Volume2 } from "lucide-react";
 
-import { LessonCard } from "@/components/product/lesson-card";
 import { fidelFamilies } from "@/data/curriculum";
 import type { FidelFamily, Progress } from "@/types/learning";
 
@@ -20,7 +19,7 @@ export function FidelPracticeScreen({
   const complete = progress.completedFamilies.includes(activeFamily.id);
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[390px_minmax(0,1fr)]">
+    <div className="grid gap-5 xl:grid-cols-[340px_minmax(0,1fr)]">
       <aside className="grid content-start gap-3">
         <div className="rounded-[2rem] bg-black p-6 text-white">
           <h1 className="text-4xl font-black">Fidel studio</h1>
@@ -28,15 +27,27 @@ export function FidelPracticeScreen({
             Practice all Amharic Fidel families. Expanded rows are included so v1 has complete coverage.
           </p>
         </div>
-        <div className="grid max-h-[72vh] gap-3 overflow-y-auto pr-1">
+        <div className="grid max-h-[68vh] gap-2 overflow-y-auto rounded-[1.5rem] border border-black/10 bg-white p-2">
           {fidelFamilies.map((family) => (
-            <LessonCard
+            <button
               key={family.id}
-              family={family}
-              active={family.id === activeFamily.id}
-              complete={progress.completedFamilies.includes(family.id)}
-              onSelect={() => onSelectFamily(family.id)}
-            />
+              type="button"
+              onClick={() => onSelectFamily(family.id)}
+              className={[
+                "flex min-h-16 items-center gap-3 rounded-[1.1rem] px-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black",
+                family.id === activeFamily.id ? "bg-black text-white" : "hover:bg-black/5",
+              ].join(" ")}
+            >
+              <span className="grid size-11 shrink-0 place-items-center rounded-xl border border-current/10 font-[var(--ethiopic)] text-3xl font-black">
+                {family.base}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-black">{family.name}</span>
+                <span className="block truncate text-xs font-bold opacity-50">
+                  {progress.completedFamilies.includes(family.id) ? "Complete" : `${family.category} · level ${family.difficulty}`}
+                </span>
+              </span>
+            </button>
           ))}
         </div>
       </aside>

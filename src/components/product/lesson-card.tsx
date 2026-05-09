@@ -23,7 +23,7 @@ export function LessonCard({
       ].join(" ")}
     >
       <div className="flex items-start justify-between gap-3">
-        <span className="font-[var(--ethiopic)] text-5xl font-black">{family.base}</span>
+        <span className="font-[var(--ethiopic)] text-5xl font-black leading-none">{family.base}</span>
         <span className="rounded-full border border-current/15 px-2.5 py-1 text-xs font-black uppercase tracking-[0.16em] opacity-70">
           {complete ? <Check size={13} /> : family.category === "expanded" ? <Lock size={13} /> : "Live"}
         </span>
