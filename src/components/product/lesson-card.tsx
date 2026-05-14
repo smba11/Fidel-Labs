@@ -18,8 +18,8 @@ export function LessonCard({
       type="button"
       onClick={onSelect}
       className={[
-        "group min-h-36 rounded-[1.5rem] border p-5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#58cc02]",
-        active ? "border-[#58cc02] bg-[#58cc02] text-black shadow-xl shadow-[#58cc02]/15" : "soft-card",
+        "group min-h-36 rounded-[1.5rem] border p-5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d6b16a]",
+        active ? "border-[#d6b16a] bg-[#d6b16a] text-black shadow-xl shadow-[#d6b16a]/15" : "soft-card",
       ].join(" ")}
     >
       <div className="flex items-start justify-between gap-3">

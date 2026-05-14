@@ -1,6 +1,7 @@
 import type { Progress } from "@/types/learning";
+import { defaultLearnerProfile } from "@/data/learning-architecture";
 
-export const progressKey = "fidel-labs-progress-v3";
+export const progressKey = "fidel-labs-progress-v4";
 export const demoUserKey = "fidel-labs-demo-user";
 
 export const defaultProgress: Progress = {
@@ -8,8 +9,13 @@ export const defaultProgress: Progress = {
   streak: 4,
   completedFamilies: ["ha", "le"],
   completedConversations: [],
+  completedRoadmapNodes: ["warm-greetings"],
   correctAnswers: 0,
   nativeListens: 0,
+  speakingConfidence: 34,
+  cultureMilestones: ["Greeting respect"],
+  profile: defaultLearnerProfile,
+  activeRoadmapId: "diaspora-family-path",
 };
 
 export function readProgress(): Progress {

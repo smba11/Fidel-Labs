@@ -20,7 +20,7 @@ export function ProgressStats({ progress, totalFamilies }: { progress: Progress;
           </div>
           <p className="mt-2 text-3xl font-black">{stat.value}</p>
           <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
-            <div className="h-full w-2/3 rounded-full bg-[#58cc02] transition-all duration-700" />
+            <div className="h-full w-2/3 rounded-full bg-[#d6b16a] transition-all duration-700" />
           </div>
         </div>
       ))}

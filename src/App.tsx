@@ -6,6 +6,7 @@ import { AppShell } from "@/components/product/app-shell";
 import { AuthDialog } from "@/components/product/auth-dialog";
 import { LoadingState } from "@/components/product/loading-state";
 import { conversations, fidelFamilies } from "@/data/curriculum";
+import { createRoadmap, defaultLearnerProfile } from "@/data/learning-architecture";
 import { defaultProgress, demoUserKey, readProgress, writeProgress } from "@/data/progress";
 import { useHashRoute } from "@/hooks/use-hash-route";
 import { auth, db, firebaseReady, googleProvider } from "@/lib/firebase";
@@ -14,8 +15,9 @@ import { Dashboard } from "@/screens/dashboard";
 import { FidelPracticeScreen } from "@/screens/fidel-practice";
 import { LandingPage } from "@/screens/landing-page";
 import { LibraryScreen } from "@/screens/library-screen";
+import { OnboardingScreen } from "@/screens/onboarding-screen";
 import { ProgressScreen } from "@/screens/progress-screen";
-import type { AppUser, Progress } from "@/types/learning";
+import type { AppUser, LearnerProfile, Progress, RoadmapNode } from "@/types/learning";
 
 function readDemoUser(): AppUser | null {
   if (typeof window === "undefined") return null;
@@ -204,6 +206,40 @@ export function App() {
     showFeedback(`${lesson?.title ?? "Conversation"} complete · +${xp} XP`);
   }
 
+  function updateProfile(profile: LearnerProfile) {
+    const roadmap = createRoadmap(profile, progress.completedRoadmapNodes, progress.xp);
+    setProgress((value) => ({
+      ...value,
+      profile,
+      activeRoadmapId: roadmap.id,
+    }));
+  }
+
+  function finishOnboarding() {
+    const profile = progress.profile ?? defaultLearnerProfile;
+    const roadmap = createRoadmap(profile, progress.completedRoadmapNodes, progress.xp);
+    setProgress((value) => ({
+      ...value,
+      profile,
+      activeRoadmapId: roadmap.id,
+      cultureMilestones: [...new Set([...value.cultureMilestones, "Personal roadmap created"])],
+    }));
+    showFeedback(`${roadmap.title} ready`);
+    setRoute("dashboard");
+  }
+
+  function selectRoadmapNode(node: RoadmapNode) {
+    if (node.targetId) {
+      if (node.route === "fidel") setActiveFamilyId(node.targetId);
+      if (node.route === "conversation") setActiveConversationId(node.targetId);
+    }
+    setProgress((value) => ({
+      ...value,
+      completedRoadmapNodes: [...new Set([...value.completedRoadmapNodes, node.id])],
+    }));
+    setRoute(node.route);
+  }
+
   function resetProgress() {
     setProgress(defaultProgress);
   }
@@ -224,6 +260,8 @@ export function App() {
   const screen =
     route === "home" ? (
       <LandingPage onStart={setRoute} />
+    ) : route === "onboarding" ? (
+      <OnboardingScreen profile={progress.profile ?? defaultLearnerProfile} onChange={updateProfile} onFinish={finishOnboarding} />
     ) : route === "fidel" ? (
       <FidelPracticeScreen activeFamily={activeFamily} progress={progress} onComplete={completeFamily} onSelectFamily={setActiveFamilyId} onSpeak={speak} />
     ) : route === "conversation" ? (
@@ -244,6 +282,7 @@ export function App() {
         user={user}
         onRoute={setRoute}
         onSelectFamily={setActiveFamilyId}
+        onSelectNode={selectRoadmapNode}
         onAuth={user ? signOutUser : () => setAuthOpen(true)}
       />
     );
@@ -257,7 +296,7 @@ export function App() {
       {feedback && (
         <div
           aria-live="polite"
-          className="fidel-pop fixed left-1/2 top-5 z-50 w-[min(92vw,380px)] -translate-x-1/2 rounded-[1.5rem] border border-[#58cc02]/40 bg-[#58cc02] px-5 py-4 text-center text-sm font-black text-black shadow-2xl shadow-[#58cc02]/20"
+          className="fidel-pop fixed left-1/2 top-5 z-50 w-[min(92vw,380px)] -translate-x-1/2 rounded-[1.5rem] border border-[#d6b16a]/40 bg-[#d6b16a] px-5 py-4 text-center text-sm font-black text-black shadow-2xl shadow-[#d6b16a]/20"
         >
           <span className="fidel-burst left-1/2 top-1/2 -z-10 -translate-x-1/2 -translate-y-1/2" />
           {feedback}

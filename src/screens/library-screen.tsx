@@ -37,7 +37,7 @@ export function LibraryScreen({ query, onQuery, onSpeak }: { query: string; onQu
                   <h3 className="font-[var(--ethiopic)] text-4xl font-black">{word.amharic}</h3>
                   <p className="mt-1 text-lg font-black">{word.transliteration} · {word.english}</p>
                 </div>
-                <button onClick={() => onSpeak(word.amharic)} className="grid size-11 place-items-center rounded-2xl bg-[#58cc02] text-black">
+                <button onClick={() => onSpeak(word.amharic)} className="grid size-11 place-items-center rounded-2xl bg-[#d6b16a] text-black">
                   <Volume2 size={18} />
                 </button>
               </div>

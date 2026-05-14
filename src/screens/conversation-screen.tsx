@@ -29,7 +29,7 @@ export function ConversationLessonScreen({
             onClick={() => onSelect(lesson.id)}
             className={[
               "rounded-[1.5rem] border p-5 text-left transition hover:-translate-y-0.5",
-              lesson.id === activeConversation.id ? "border-[#58cc02] bg-[#58cc02] text-black" : "soft-card",
+              lesson.id === activeConversation.id ? "border-[#d6b16a] bg-[#d6b16a] text-black" : "soft-card",
             ].join(" ")}
           >
             <div className="flex items-center justify-between gap-3">
@@ -50,7 +50,7 @@ export function ConversationLessonScreen({
           </div>
           <button
             onClick={() => onComplete(activeConversation.id, activeConversation.xp)}
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#58cc02] px-5 text-sm font-black text-black transition hover:-translate-y-0.5"
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#d6b16a] px-5 text-sm font-black text-black transition hover:-translate-y-0.5"
           >
             <Play size={17} />
             Complete +{activeConversation.xp} XP
@@ -67,7 +67,7 @@ export function ConversationLessonScreen({
                   <p className="mt-2 text-lg font-black">{line.transliteration}</p>
                   <p className="mt-1 text-sm font-bold text-white/55">{line.english}</p>
                 </div>
-                <button onClick={() => onSpeak(line.amharic)} className="grid size-12 place-items-center rounded-2xl bg-[#58cc02] text-black">
+                <button onClick={() => onSpeak(line.amharic)} className="grid size-12 place-items-center rounded-2xl bg-[#d6b16a] text-black">
                   <Volume2 size={19} />
                 </button>
               </div>

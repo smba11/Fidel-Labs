@@ -35,7 +35,7 @@ export function FidelPracticeScreen({
               onClick={() => onSelectFamily(family.id)}
               className={[
                 "flex min-h-16 items-center gap-3 rounded-[1.1rem] px-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black",
-                family.id === activeFamily.id ? "bg-[#58cc02] text-black" : "hover:bg-white/8",
+                family.id === activeFamily.id ? "bg-[#d6b16a] text-black" : "hover:bg-white/8",
               ].join(" ")}
             >
               <span className="grid size-11 shrink-0 place-items-center rounded-xl border border-current/10 font-[var(--ethiopic)] text-3xl font-black">
@@ -61,7 +61,7 @@ export function FidelPracticeScreen({
           </div>
           <button
             onClick={() => onComplete(activeFamily.id)}
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#58cc02] px-5 text-sm font-black text-black transition hover:-translate-y-0.5"
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#d6b16a] px-5 text-sm font-black text-black transition hover:-translate-y-0.5"
           >
             <Check size={17} />
             {complete ? "Completed" : "Mark complete"}
@@ -77,7 +77,7 @@ export function FidelPracticeScreen({
             >
               <div className="flex items-start justify-between">
                 <span className="font-[var(--ethiopic)] text-6xl font-black">{order.fidel}</span>
-                <span className="grid size-10 place-items-center rounded-full bg-[#58cc02] text-black transition group-hover:scale-105">
+                <span className="grid size-10 place-items-center rounded-full bg-[#d6b16a] text-black transition group-hover:scale-105">
                   <Volume2 size={18} />
                 </span>
               </div>

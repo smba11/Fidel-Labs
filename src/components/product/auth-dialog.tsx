@@ -20,7 +20,7 @@ export function AuthDialog({
       <div className="w-full max-w-md" onClick={(event) => event.stopPropagation()}>
         <Signup1
           heading="Save your progress"
-          logo={{ url: "#", src: "/favicon.svg", alt: "Fidel Labs logo", title: "Fidel Labs" }}
+          logo={{ url: "#", src: "glyph", alt: "Fidel Labs", title: "Fidel Labs" }}
           signupText="Continue with Google"
           googleText="Use Google"
           loginText=""

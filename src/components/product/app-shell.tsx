@@ -7,7 +7,7 @@ const navItems: { id: RouteId; label: string; icon: React.ReactNode }[] = [
   { id: "fidel", label: "Fidel", icon: <BookOpen size={20} /> },
   { id: "conversation", label: "Talk", icon: <MessageCircle size={20} /> },
   { id: "library", label: "Library", icon: <Library size={20} /> },
-  { id: "progress", label: "Path", icon: <Map size={20} /> },
+  { id: "progress", label: "Growth", icon: <Map size={20} /> },
 ];
 
 export function AppShell({
@@ -28,7 +28,9 @@ export function AppShell({
       <div className="mx-auto grid min-h-screen w-full max-w-[1560px] gap-5 px-4 py-4 md:grid-cols-[116px_minmax(0,1fr)] md:px-7 md:py-7 xl:gap-8">
         <aside className="fixed bottom-4 left-4 right-4 z-40 rounded-[1.5rem] border border-white/10 bg-[#111]/90 p-2 shadow-2xl shadow-black/30 backdrop-blur md:sticky md:bottom-auto md:top-7 md:flex md:h-[calc(100vh-3.5rem)] md:flex-col md:rounded-[2rem] md:p-3">
           <div className="mb-4 hidden md:flex md:items-center md:justify-center">
-            <img src="/favicon.svg" alt="Fidel Labs" className="size-14 rounded-2xl border border-white/10 shadow-lg shadow-black/30" />
+            <div aria-label="Fidel Labs" className="grid size-12 place-items-center rounded-2xl border border-white/10 bg-white/[0.04] font-[var(--ethiopic)] text-2xl font-black text-[#d6b16a] shadow-lg shadow-black/30">
+              ፊ
+            </div>
           </div>
           <nav aria-label="Primary navigation" className="grid grid-cols-5 gap-2 md:grid-cols-1 md:gap-2">
             {navItems.map((item) => (

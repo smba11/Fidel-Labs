@@ -61,7 +61,11 @@ const Signup1 = ({
           <div className="flex flex-col items-center gap-2 text-center">
             <div className="flex items-center gap-1 lg:justify-start">
               <a href={logo.url} aria-label={logo.title ?? logo.alt}>
-                <img src={logo.src} alt={logo.alt} title={logo.title} className="h-12 rounded-2xl border border-white/10" />
+                {logo.src === "glyph" ? (
+                  <span className="grid size-12 place-items-center rounded-2xl border border-white/10 bg-white/[0.04] font-[var(--ethiopic)] text-2xl font-black text-[#d6b16a]">ፊ</span>
+                ) : (
+                  <img src={logo.src} alt={logo.alt} title={logo.title} className="h-12 rounded-2xl border border-white/10" />
+                )}
               </a>
             </div>
             {heading && <h1 className="text-3xl font-black tracking-tight">{heading}</h1>}
