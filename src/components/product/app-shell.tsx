@@ -24,11 +24,11 @@ export function AppShell({
   onRoute: (route: RouteId) => void;
 }) {
   return (
-    <main className="min-h-screen bg-[#f7f7f4] text-black">
+    <main className="aurora-shell min-h-screen text-white">
       <div className="mx-auto grid min-h-screen w-full max-w-[1560px] gap-5 px-4 py-4 md:grid-cols-[116px_minmax(0,1fr)] md:px-7 md:py-7 xl:gap-8">
-        <aside className="fixed bottom-4 left-4 right-4 z-40 rounded-[1.5rem] border border-black/10 bg-white/92 p-2 shadow-2xl shadow-black/10 backdrop-blur md:sticky md:bottom-auto md:top-7 md:flex md:h-[calc(100vh-3.5rem)] md:flex-col md:rounded-[2rem] md:p-3">
+        <aside className="fixed bottom-4 left-4 right-4 z-40 rounded-[1.5rem] border border-white/10 bg-[#111]/90 p-2 shadow-2xl shadow-black/30 backdrop-blur md:sticky md:bottom-auto md:top-7 md:flex md:h-[calc(100vh-3.5rem)] md:flex-col md:rounded-[2rem] md:p-3">
           <div className="mb-4 hidden md:flex md:items-center md:justify-center">
-            <img src="/favicon.svg" alt="Fidel Labs" className="size-14 rounded-2xl border border-black/10" />
+            <img src="/favicon.svg" alt="Fidel Labs" className="size-14 rounded-2xl border border-white/10 shadow-lg shadow-black/30" />
           </div>
           <nav aria-label="Primary navigation" className="grid grid-cols-5 gap-2 md:grid-cols-1 md:gap-2">
             {navItems.map((item) => (
@@ -39,7 +39,7 @@ export function AppShell({
                 aria-current={route === item.id ? "page" : undefined}
                 className={[
                   "grid min-h-16 place-items-center rounded-2xl text-xs font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black md:min-h-[74px] md:gap-1",
-                  route === item.id ? "bg-black text-white" : "text-black/55 hover:bg-black/5 hover:text-black",
+                  route === item.id ? "bg-white text-black shadow-lg shadow-white/10" : "text-white/55 hover:bg-white/8 hover:text-white",
                 ].join(" ")}
                 title={item.label}
               >
@@ -53,9 +53,9 @@ export function AppShell({
             onClick={onAuth}
             aria-label={user ? "Sign out" : "Sign in"}
             title={user ? "Sign out" : "Sign in"}
-            className="mt-4 hidden rounded-2xl border border-black/10 p-3 text-left transition hover:border-black hover:bg-black/5 md:block"
+            className="mt-4 hidden rounded-2xl border border-white/10 bg-white/5 p-3 text-left transition hover:border-white/25 hover:bg-white/10 md:block"
           >
-            <div className="mx-auto grid size-12 place-items-center overflow-hidden rounded-2xl bg-black text-white">
+            <div className="mx-auto grid size-12 place-items-center overflow-hidden rounded-2xl bg-white text-black">
               {user?.photoURL ? (
                 <img src={user.photoURL} alt="" className="size-full object-cover" />
               ) : user ? (
@@ -65,13 +65,13 @@ export function AppShell({
               )}
             </div>
             <p className="mt-3 truncate text-center text-xs font-black">{user ? "Account" : "Guest"}</p>
-            <p className="mt-1 text-center text-[11px] font-bold leading-4 text-black/45">{user ? "Cloud on" : "Sign in"}</p>
+            <p className="mt-1 text-center text-[11px] font-bold leading-4 text-white/45">{user ? "Cloud on" : "Sign in"}</p>
           </button>
-          <div className="mt-auto hidden border-t border-black/10 pt-3 md:block">
+          <div className="mt-auto hidden border-t border-white/10 pt-3 md:block">
             <button
               type="button"
               onClick={onAuth}
-              className="grid min-h-12 w-full place-items-center rounded-2xl text-black/45 transition hover:bg-black/5 hover:text-black"
+              className="grid min-h-12 w-full place-items-center rounded-2xl text-white/45 transition hover:bg-white/8 hover:text-white"
               aria-label={user ? "Sign out" : "Sign in"}
               title={user ? "Sign out" : "Sign in"}
             >
@@ -80,7 +80,9 @@ export function AppShell({
           </div>
         </aside>
 
-        <div className="min-w-0 pb-24 md:pb-0">{children}</div>
+        <div key={route} className="page-rise min-w-0 pb-24 md:pb-0">
+          {children}
+        </div>
       </div>
     </main>
   );

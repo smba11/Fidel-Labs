@@ -55,7 +55,9 @@ export function App() {
   const [activeFamilyId, setActiveFamilyId] = useState("ha");
   const [activeConversationId, setActiveConversationId] = useState(conversations[0].id);
   const [libraryQuery, setLibraryQuery] = useState("");
+  const [feedback, setFeedback] = useState("");
   const cloudReady = useRef(!firebaseReady);
+  const feedbackTimer = useRef<number | null>(null);
 
   const activeFamily = useMemo(
     () => fidelFamilies.find((family) => family.id === activeFamilyId) ?? fidelFamilies[0],
@@ -140,6 +142,18 @@ export function App() {
     });
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (feedbackTimer.current) window.clearTimeout(feedbackTimer.current);
+    };
+  }, []);
+
+  function showFeedback(message: string) {
+    setFeedback(message);
+    if (feedbackTimer.current) window.clearTimeout(feedbackTimer.current);
+    feedbackTimer.current = window.setTimeout(() => setFeedback(""), 2200);
+  }
+
   async function signInWithGoogle() {
     setAuthError("");
     if (!firebaseReady || !auth) {
@@ -167,6 +181,7 @@ export function App() {
   }
 
   function completeFamily(id: string) {
+    const family = fidelFamilies.find((item) => item.id === id);
     setProgress((value) => ({
       ...value,
       xp: value.completedFamilies.includes(id) ? value.xp : value.xp + 15,
@@ -174,9 +189,11 @@ export function App() {
       correctAnswers: value.correctAnswers + 1,
       lastPracticedAt: new Date().toISOString(),
     }));
+    showFeedback(`${family?.base ?? "Fidel"} saved · +15 XP`);
   }
 
   function completeConversation(id: string, xp: number) {
+    const lesson = conversations.find((item) => item.id === id);
     setProgress((value) => ({
       ...value,
       xp: value.completedConversations.includes(id) ? value.xp : value.xp + xp,
@@ -184,6 +201,7 @@ export function App() {
       correctAnswers: value.correctAnswers + 1,
       lastPracticedAt: new Date().toISOString(),
     }));
+    showFeedback(`${lesson?.title ?? "Conversation"} complete · +${xp} XP`);
   }
 
   function resetProgress() {
@@ -236,6 +254,15 @@ export function App() {
         {screen}
       </AppShell>
       {authOpen && <AuthDialog error={authError} firebaseReady={firebaseReady} onClose={() => setAuthOpen(false)} onSignIn={signInWithGoogle} />}
+      {feedback && (
+        <div
+          aria-live="polite"
+          className="fidel-pop fixed left-1/2 top-5 z-50 w-[min(92vw,380px)] -translate-x-1/2 rounded-[1.5rem] border border-[#58cc02]/40 bg-[#58cc02] px-5 py-4 text-center text-sm font-black text-black shadow-2xl shadow-[#58cc02]/20"
+        >
+          <span className="fidel-burst left-1/2 top-1/2 -z-10 -translate-x-1/2 -translate-y-1/2" />
+          {feedback}
+        </div>
+      )}
     </>
   );
 }

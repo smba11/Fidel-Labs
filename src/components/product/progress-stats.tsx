@@ -13,12 +13,15 @@ export function ProgressStats({ progress, totalFamilies }: { progress: Progress;
   return (
     <section aria-label="Progress summary" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {stats.map((stat) => (
-        <div key={stat.label} className="rounded-[1.35rem] border border-black/10 bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between text-black/45">
+        <div key={stat.label} className="soft-card rounded-[1.35rem] p-4">
+          <div className="flex items-center justify-between text-white/45">
             <span className="text-xs font-black uppercase tracking-[0.2em]">{stat.label}</span>
             {stat.icon}
           </div>
           <p className="mt-2 text-3xl font-black">{stat.value}</p>
+          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+            <div className="h-full w-2/3 rounded-full bg-[#58cc02] transition-all duration-700" />
+          </div>
         </div>
       ))}
     </section>
