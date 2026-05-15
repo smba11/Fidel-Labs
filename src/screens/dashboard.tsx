@@ -5,12 +5,14 @@ import { ProficiencyPanel } from "@/components/product/proficiency-panel";
 import { ProgressStats } from "@/components/product/progress-stats";
 import { RoadmapView } from "@/components/product/roadmap-view";
 import { conversations, fidelFamilies, vocabulary } from "@/data/curriculum";
-import { createRoadmap, defaultLearnerProfile, getProficiencyForProgress } from "@/data/learning-architecture";
-import type { AppUser, Progress, RoadmapNode, RouteId } from "@/types/learning";
+import { getProficiencyForProgress } from "@/data/learning-architecture";
+import { buildReviewQueue, getRecommendedNode, getWeakSkills } from "@/data/learning-engine";
+import type { AppUser, PersonalizedRoadmap, Progress, RoadmapNode, RouteId } from "@/types/learning";
 
 export function Dashboard({
   progress,
   user,
+  roadmap,
   onRoute,
   onSelectFamily,
   onSelectNode,
@@ -18,6 +20,7 @@ export function Dashboard({
 }: {
   progress: Progress;
   user: AppUser | null;
+  roadmap: PersonalizedRoadmap;
   onRoute: (route: RouteId) => void;
   onSelectFamily: (id: string) => void;
   onSelectNode: (node: RoadmapNode) => void;
@@ -26,10 +29,10 @@ export function Dashboard({
   const nextFamily = fidelFamilies.find((family) => !progress.completedFamilies.includes(family.id)) ?? fidelFamilies[0];
   const signedIn = Boolean(user && !user.demo);
   const firstName = user?.name?.split(" ")[0] || "learner";
-  const profile = progress.profile ?? defaultLearnerProfile;
-  const roadmap = createRoadmap(profile, progress.completedRoadmapNodes, progress.xp);
   const proficiency = getProficiencyForProgress(progress.xp);
-  const nextNode = roadmap.nodes.find((node) => !progress.completedRoadmapNodes.includes(node.id)) ?? roadmap.nodes[0];
+  const nextNode = getRecommendedNode(progress);
+  const reviewQueue = buildReviewQueue(progress);
+  const weakSkills = getWeakSkills(progress);
 
   return (
     <div className="grid gap-5">
@@ -106,6 +109,11 @@ export function Dashboard({
               </button>
             )}
           </div>
+          <button onClick={() => onRoute("review")} className="surface-panel rounded-[1.5rem] p-5 text-left transition hover:-translate-y-0.5">
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-white/38">Memory engine</p>
+            <h2 className="mt-3 text-3xl font-black">{reviewQueue.length} due today</h2>
+            <p className="mt-2 text-sm font-bold leading-6 text-white/55">Your review queue is based on confidence, mistakes, and next review dates.</p>
+          </button>
         </div>
       </section>
 
@@ -118,8 +126,29 @@ export function Dashboard({
             <h2 className="mt-3 text-5xl font-black">{progress.speakingConfidence}%</h2>
             <p className="mt-3 text-sm font-bold leading-6 text-white/55">Tracked through conversation reps, listening practice, and completed speaking nodes.</p>
           </div>
+          <div className="surface-panel rounded-[2rem] p-6">
+            <p className="text-xs font-black uppercase tracking-[0.24em] text-white/38">Weak areas</p>
+            <div className="mt-4 grid gap-3">
+              {weakSkills.map((skill) => (
+                <div key={skill.skill} className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                  <p className="text-sm font-black capitalize">{skill.skill.replace(/([A-Z])/g, " $1")}</p>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+                    <div className="h-full rounded-full bg-[#d6b16a]" style={{ width: `${skill.mastery}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
+
+      {progress.lastTutorFeedback && (
+        <section className="glass-panel rounded-[2rem] p-6">
+          <p className="text-xs font-black uppercase tracking-[0.24em] text-white/38">Tutor summary</p>
+          <h2 className="mt-3 text-3xl font-black">{progress.lastTutorFeedback.headline}</h2>
+          <p className="mt-3 text-sm font-bold leading-6 text-white/55">{progress.lastTutorFeedback.nextStep}</p>
+        </section>
+      )}
 
       <section>
         <div className="mb-3 flex items-end justify-between">

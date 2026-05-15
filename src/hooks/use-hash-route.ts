@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import type { RouteId } from "@/types/learning";
 
-const routes: RouteId[] = ["home", "dashboard", "onboarding", "fidel", "conversation", "library", "progress"];
+const routes: RouteId[] = ["home", "dashboard", "onboarding", "review", "fidel", "conversation", "library", "progress"];
 
 function getRoute(): RouteId {
   const hash = window.location.hash.replace("#", "") as RouteId;

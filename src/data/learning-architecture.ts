@@ -7,6 +7,9 @@ export const defaultLearnerProfile: LearnerProfile = {
   reads: false,
   ageGroup: "teen",
   goals: ["family", "confidence", "reading", "culture"],
+  confidenceLevel: 34,
+  preferredLanguage: "amharic",
+  motivation: "Speak with family and feel more connected.",
   heritage: "diaspora",
 };
 

@@ -1,7 +1,7 @@
 import { ArrowRight, Check } from "lucide-react";
 
 import { createRoadmap, defaultLearnerProfile } from "@/data/learning-architecture";
-import type { LearnerGoal, LearnerProfile } from "@/types/learning";
+import type { LearnerGoal, LearnerProfile, PlacementAnswers } from "@/types/learning";
 
 const goalOptions: { id: LearnerGoal; label: string }[] = [
   { id: "family", label: "Family communication" },
@@ -19,9 +19,18 @@ export function OnboardingScreen({
 }: {
   profile: LearnerProfile;
   onChange: (profile: LearnerProfile) => void;
-  onFinish: () => void;
+  onFinish: (answers: PlacementAnswers) => void;
 }) {
   const draft = profile ?? defaultLearnerProfile;
+  const placementAnswers: PlacementAnswers = {
+    understandsAmharic: draft.understands,
+    canSpeak: draft.speaks,
+    canReadFidel: draft.reads,
+    knowsGreetings: draft.knowledge !== "none",
+    knowsFamilyWords: draft.goals.includes("family") && draft.knowledge !== "none",
+    understandsFormalCasual: draft.goals.includes("culture") || draft.goals.includes("slang"),
+    understandsDiasporaSpeech: draft.heritage === "diaspora" && draft.goals.includes("slang"),
+  };
   const preview = createRoadmap(draft);
 
   function update(next: Partial<LearnerProfile>) {
@@ -75,6 +84,24 @@ export function OnboardingScreen({
                     <span className="mb-3 grid size-8 place-items-center rounded-xl border border-white/10">{active && <Check size={16} />}</span>
                     {label}
                   </button>
+                );
+              })}
+            </div>
+          </Question>
+
+          <Question title="Placement signals Fidel will use">
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                ["knowsGreetings", "I know basic greetings"],
+                ["knowsFamilyWords", "I know some family words"],
+                ["understandsFormalCasual", "I notice formal vs casual speech"],
+                ["understandsDiasporaSpeech", "I understand mixed diaspora speech"],
+              ].map(([key, label]) => {
+                const active = Boolean(placementAnswers[key as keyof PlacementAnswers]);
+                return (
+                  <div key={key} className={["rounded-2xl border p-4 text-sm font-black", active ? "border-[#d6b16a]/35 bg-[#d6b16a]/12 text-white" : "border-white/10 bg-white/5 text-white/42"].join(" ")}>
+                    {label}
+                  </div>
                 );
               })}
             </div>
@@ -139,7 +166,7 @@ export function OnboardingScreen({
               </div>
             ))}
           </div>
-          <button onClick={onFinish} className="mt-6 inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#d6b16a] px-5 text-sm font-black text-black transition hover:-translate-y-0.5">
+          <button onClick={() => onFinish(placementAnswers)} className="mt-6 inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#d6b16a] px-5 text-sm font-black text-black transition hover:-translate-y-0.5">
             Start this roadmap
             <ArrowRight size={18} />
           </button>

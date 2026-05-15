@@ -1,9 +1,10 @@
-import { BookOpen, Library, LogOut, Map, MessageCircle, Sparkles, UserRound } from "lucide-react";
+import { BookOpen, Library, LogOut, Map, MessageCircle, RotateCcw, Sparkles, UserRound } from "lucide-react";
 
 import type { AppUser, RouteId } from "@/types/learning";
 
 const navItems: { id: RouteId; label: string; icon: React.ReactNode }[] = [
   { id: "dashboard", label: "Today", icon: <Sparkles size={20} /> },
+  { id: "review", label: "Review", icon: <RotateCcw size={20} /> },
   { id: "fidel", label: "Fidel", icon: <BookOpen size={20} /> },
   { id: "conversation", label: "Talk", icon: <MessageCircle size={20} /> },
   { id: "library", label: "Library", icon: <Library size={20} /> },
@@ -32,7 +33,7 @@ export function AppShell({
               ፊ
             </div>
           </div>
-          <nav aria-label="Primary navigation" className="grid grid-cols-5 gap-2 md:grid-cols-1 md:gap-2">
+          <nav aria-label="Primary navigation" className="grid grid-cols-6 gap-2 md:grid-cols-1 md:gap-2">
             {navItems.map((item) => (
               <button
                 key={item.id}
@@ -40,7 +41,7 @@ export function AppShell({
                 onClick={() => onRoute(item.id)}
                 aria-current={route === item.id ? "page" : undefined}
                 className={[
-                  "grid min-h-16 place-items-center rounded-2xl text-xs font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black md:min-h-[74px] md:gap-1",
+                  "grid min-h-16 place-items-center rounded-2xl text-[11px] font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black md:min-h-[68px] md:gap-1 md:text-xs",
                   route === item.id ? "bg-white text-black shadow-lg shadow-white/10" : "text-white/55 hover:bg-white/8 hover:text-white",
                 ].join(" ")}
                 title={item.label}

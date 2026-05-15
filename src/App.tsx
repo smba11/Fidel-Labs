@@ -7,6 +7,7 @@ import { AuthDialog } from "@/components/product/auth-dialog";
 import { LoadingState } from "@/components/product/loading-state";
 import { conversations, fidelFamilies } from "@/data/curriculum";
 import { createRoadmap, defaultLearnerProfile } from "@/data/learning-architecture";
+import { answerReview, completeLesson, completeRoadmapNode, getAdaptiveRoadmap, profileFromPlacement, runPlacement } from "@/data/learning-engine";
 import { defaultProgress, demoUserKey, readProgress, writeProgress } from "@/data/progress";
 import { useHashRoute } from "@/hooks/use-hash-route";
 import { auth, db, firebaseReady, googleProvider } from "@/lib/firebase";
@@ -17,7 +18,8 @@ import { LandingPage } from "@/screens/landing-page";
 import { LibraryScreen } from "@/screens/library-screen";
 import { OnboardingScreen } from "@/screens/onboarding-screen";
 import { ProgressScreen } from "@/screens/progress-screen";
-import type { AppUser, LearnerProfile, Progress, RoadmapNode } from "@/types/learning";
+import { ReviewScreen } from "@/screens/review-screen";
+import type { AppUser, LearnerProfile, PlacementAnswers, Progress, RoadmapNode } from "@/types/learning";
 
 function readDemoUser(): AppUser | null {
   if (typeof window === "undefined") return null;
@@ -73,6 +75,7 @@ export function App() {
   useEffect(() => {
     writeProgress(progress);
     if (user && !user.demo && db && cloudReady.current) {
+      const activeRoadmap = getAdaptiveRoadmap(progress);
       void setDoc(
         doc(db, "users", user.uid),
         {
@@ -81,6 +84,18 @@ export function App() {
             email: user.email,
             photoURL: user.photoURL ?? null,
           },
+          learnerProfile: progress.profile ?? defaultLearnerProfile,
+          activeRoadmap,
+          placementResult: progress.placementResult ?? null,
+          skillMastery: progress.skillMastery,
+          masteryItems: progress.masteryItems,
+          reviewQueue: progress.reviewQueue,
+          lessonAttempts: progress.lessonAttempts,
+          mistakes: progress.mistakes,
+          achievements: progress.achievements,
+          xp: progress.xp,
+          streak: progress.streak,
+          lastActiveDate: progress.lastPracticedAt ?? null,
           progress,
           updatedAt: serverTimestamp(),
         },
@@ -185,11 +200,17 @@ export function App() {
   function completeFamily(id: string) {
     const family = fidelFamilies.find((item) => item.id === id);
     setProgress((value) => ({
-      ...value,
-      xp: value.completedFamilies.includes(id) ? value.xp : value.xp + 15,
-      completedFamilies: [...new Set([...value.completedFamilies, id])],
-      correctAnswers: value.correctAnswers + 1,
-      lastPracticedAt: new Date().toISOString(),
+      ...completeLesson(
+        {
+          ...value,
+          completedFamilies: [...new Set([...value.completedFamilies, id])],
+          correctAnswers: value.correctAnswers + 1,
+        },
+        id,
+        "fidel",
+        value.completedFamilies.includes(id) ? 0 : 15,
+        family?.difficulty === 3 ? "readingFidel" : undefined
+      ),
     }));
     showFeedback(`${family?.base ?? "Fidel"} saved · +15 XP`);
   }
@@ -197,11 +218,17 @@ export function App() {
   function completeConversation(id: string, xp: number) {
     const lesson = conversations.find((item) => item.id === id);
     setProgress((value) => ({
-      ...value,
-      xp: value.completedConversations.includes(id) ? value.xp : value.xp + xp,
-      completedConversations: [...new Set([...value.completedConversations, id])],
-      correctAnswers: value.correctAnswers + 1,
-      lastPracticedAt: new Date().toISOString(),
+      ...completeLesson(
+        {
+          ...value,
+          completedConversations: [...new Set([...value.completedConversations, id])],
+          correctAnswers: value.correctAnswers + 1,
+        },
+        id,
+        "conversation",
+        value.completedConversations.includes(id) ? 0 : xp,
+        lesson?.level === "Confident" ? "register" : undefined
+      ),
     }));
     showFeedback(`${lesson?.title ?? "Conversation"} complete · +${xp} XP`);
   }
@@ -215,12 +242,15 @@ export function App() {
     }));
   }
 
-  function finishOnboarding() {
+  function finishOnboarding(answers?: PlacementAnswers) {
     const profile = progress.profile ?? defaultLearnerProfile;
-    const roadmap = createRoadmap(profile, progress.completedRoadmapNodes, progress.xp);
+    const placement = answers ? runPlacement(answers) : progress.placementResult;
+    const placedProfile = placement ? profileFromPlacement(profile, placement) : profile;
+    const roadmap = createRoadmap(placedProfile, progress.completedRoadmapNodes, progress.xp);
     setProgress((value) => ({
       ...value,
-      profile,
+      profile: placedProfile,
+      placementResult: placement,
       activeRoadmapId: roadmap.id,
       cultureMilestones: [...new Set([...value.cultureMilestones, "Personal roadmap created"])],
     }));
@@ -233,11 +263,13 @@ export function App() {
       if (node.route === "fidel") setActiveFamilyId(node.targetId);
       if (node.route === "conversation") setActiveConversationId(node.targetId);
     }
-    setProgress((value) => ({
-      ...value,
-      completedRoadmapNodes: [...new Set([...value.completedRoadmapNodes, node.id])],
-    }));
+    setProgress((value) => completeRoadmapNode(value, node));
     setRoute(node.route);
+  }
+
+  function reviewAnswer(masteryItemId: string, correct: boolean) {
+    setProgress((value) => answerReview(value, masteryItemId, correct));
+    showFeedback(correct ? "Memory strengthened" : "Added back to review");
   }
 
   function resetProgress() {
@@ -262,6 +294,8 @@ export function App() {
       <LandingPage onStart={setRoute} />
     ) : route === "onboarding" ? (
       <OnboardingScreen profile={progress.profile ?? defaultLearnerProfile} onChange={updateProfile} onFinish={finishOnboarding} />
+    ) : route === "review" ? (
+      <ReviewScreen progress={progress} onAnswerReview={reviewAnswer} />
     ) : route === "fidel" ? (
       <FidelPracticeScreen activeFamily={activeFamily} progress={progress} onComplete={completeFamily} onSelectFamily={setActiveFamilyId} onSpeak={speak} />
     ) : route === "conversation" ? (
@@ -280,6 +314,7 @@ export function App() {
       <Dashboard
         progress={progress}
         user={user}
+        roadmap={getAdaptiveRoadmap(progress)}
         onRoute={setRoute}
         onSelectFamily={setActiveFamilyId}
         onSelectNode={selectRoadmapNode}
