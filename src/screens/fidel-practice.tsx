@@ -14,7 +14,7 @@ export function FidelPracticeScreen({
   progress: Progress;
   onComplete: (id: string) => void;
   onSelectFamily: (id: string) => void;
-  onSpeak: (text: string) => void;
+  onSpeak: (text: string, fallback?: string) => void;
 }) {
   const complete = progress.completedFamilies.includes(activeFamily.id);
 
@@ -72,12 +72,12 @@ export function FidelPracticeScreen({
           {activeFamily.orders.map((order) => (
             <button
               key={order.fidel}
-              onClick={() => onSpeak(order.fidel)}
-              className="soft-card group rounded-[1.5rem] p-5 text-left"
+              onClick={() => onSpeak(order.fidel, `${order.transliteration}. ${order.note}`)}
+              className="group rounded-[1.5rem] border border-white/10 bg-[#171410] p-5 text-left shadow-[inset_0_-6px_0_rgba(0,0,0,0.25)] transition hover:-translate-y-1 hover:border-[#d6b16a]/45"
             >
               <div className="flex items-start justify-between">
                 <span className="font-[var(--ethiopic)] text-6xl font-black">{order.fidel}</span>
-                <span className="grid size-10 place-items-center rounded-full bg-[#d6b16a] text-black transition group-hover:scale-105">
+                <span className="grid size-10 place-items-center rounded-full bg-[#d6b16a] text-black shadow-[0_5px_0_#8f6f34] transition group-hover:scale-105">
                   <Volume2 size={18} />
                 </span>
               </div>

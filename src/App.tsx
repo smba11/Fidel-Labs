@@ -276,12 +276,16 @@ export function App() {
     setProgress(defaultProgress);
   }
 
-  function speak(text: string) {
+  function speak(text: string, fallback?: string) {
     if (!("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = /[\u1200-\u137F]/.test(text) ? "am-ET" : "en-US";
-    utterance.rate = 0.78;
+    const wantsAmharic = /[\u1200-\u137F]/.test(text);
+    const voices = window.speechSynthesis.getVoices();
+    const amharicVoice = voices.find((voice) => voice.lang.toLowerCase().startsWith("am"));
+    const utterance = new SpeechSynthesisUtterance(wantsAmharic && !amharicVoice && fallback ? fallback : text);
+    utterance.lang = wantsAmharic && amharicVoice ? "am-ET" : "en-US";
+    if (amharicVoice) utterance.voice = amharicVoice;
+    utterance.rate = wantsAmharic && amharicVoice ? 0.78 : 0.86;
     window.speechSynthesis.speak(utterance);
   }
 
